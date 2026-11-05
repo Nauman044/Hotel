@@ -4,6 +4,9 @@
 // ===================================================================
 window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7SOgM1Ymwn4Z_ZAaW22dPzoNWjzYdlC6i36h681Q2fW-oWMqIioYu9JAC/exec';
 
+/* QR Code Generator for JavaScript - Copyright (c) 2009 Kazuhiko Arase - MIT license (https://github.com/kazuhikoarase/qrcode-generator) */
+var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},window.__qrcode=qrcode;
+
 (() => {
   var __defProp = Object.defineProperty;
   var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -220,7 +223,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
         /* Sign-out: remove this hotel's copy from the device. (The Google Sheet keeps everything.) */
         clearLocal() {
           LDB.del(CACHE_KEY);
-          LDB.keys().filter((k) => k.indexOf("hotelpos.memo:") === 0).forEach((k) => LDB.del(k));
+          LDB.keys().filter((k) => /^hotelpos\.(memo|docs|live):/.test(k)).forEach((k) => LDB.del(k));
         },
         /* Last known hotel data, kept on this device (IndexedDB): the app paints from it instantly
            on every open while fresh data loads from the Google Sheet in the background. */
@@ -691,7 +694,9 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     pending: 0,
     queued: 0,
     offline: false,
-    lastSync: 0
+    lastSync: 0,
+    qr: [],
+    qrFresh: []
   };
   var subs = /* @__PURE__ */ new Set();
   var session = null;
@@ -765,6 +770,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
         const op = q[0];
         try {
           const r = await raw(op.action, op.data, { opId: op.opId });
+          liveSaved(op.action, op.data);
           merge(op.action, r);
         } catch (err) {
           if (err instanceof ApiError && NETERR.includes(err.code)) {
@@ -773,6 +779,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
           }
           if (err instanceof ApiError && AUTHERR.includes(err.code)) return;
           console.error("queued change rejected", op.action, err);
+          liveDrop(op.action, op.data);
           S.rejected = err && err.message || "A change made while offline was rejected.";
           emit("rejected");
         }
@@ -834,9 +841,248 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     if (action === "saveSettings") return "settings";
     return "";
   }
+  // ---- Live dashboard: sales/payments made on this device are added to the dashboard instantly.
+  // Each entry is removed once a dashboard reply that started AFTER the server saved it arrives
+  // (that reply already contains it), so nothing is counted twice.
+  var LIVE = [];
+  var liveDay = () => {
+    const d = /* @__PURE__ */ new Date(), p = (n) => String(n).padStart(2, "0");
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  };
+  function liveDiskKey() {
+    return session && session.key ? "hotelpos.live:" + session.key : "";
+  }
+  function liveStore() {
+    const k = liveDiskKey();
+    if (k) LIVE.length ? LDB.set(k, LIVE, true) : LDB.del(k);
+  }
+  function liveLoad() {
+    const k = liveDiskKey(), v = k ? LDB.get(k) : null, day = liveDay();
+    LIVE = Array.isArray(v) ? v.filter((e) => e && e.day === day) : [];
+  }
+  var bucketOf = (m) => ({ CASH: "cash", CARD: "card", ONLINE: "bank" })[m] || "other";
+  function liveSale(key, t, payments, opts) {
+    const e = { key, day: liveDay(), savedAt: 0, orders: 0, gross: 0, discount: 0, tax: 0, service: 0, net: 0, cash: 0, card: 0, bank: 0, other: 0, items: [] };
+    const list = (payments || []).map((p) => ({ method: p.method, amount: Number(p.amount) || 0 }));
+    const paidBefore = Number(opts && opts.paidBefore) || 0;
+    let sum = list.reduce((a, p) => a + p.amount, 0);
+    if (opts && opts.payFull && list.length) {
+      const due = r2(t.total - paidBefore);
+      list[list.length - 1].amount = r2(list[list.length - 1].amount + (due - sum));
+      sum = due;
+    }
+    list.forEach((p) => e[bucketOf(p.method)] = r2(e[bucketOf(p.method)] + p.amount));
+    if (sum + paidBefore + 5e-3 >= t.total) Object.assign(e, { orders: 1, gross: t.subtotal, discount: t.discount, tax: t.tax, service: t.service, net: t.total });
+    return e;
+  }
+  function liveItems(key, items) {
+    const e = { key, day: liveDay(), savedAt: 0, items: [] };
+    (items || []).forEach((l) => {
+      const m = S.menu.find((x) => x.id === l.menuId);
+      if (m) e.items.push({ name: m.name, qty: Number(l.qty) || 0 });
+    });
+    return e.items.length ? e : null;
+  }
+  function liveFor(action, data, opts) {
+    if (!data) return [];
+    const out = [];
+    const totalsOf = (sub, type, value) => compute(sub, type && type !== "NONE" ? discountAmount(sub, type, Number(value) || 0) : 0, cfg());
+    if (action === "createOrder" && data.uid) out.push(liveItems("o:" + data.uid, data.items));
+    if (action === "quickSale") {
+      if (data.uid) out.push(liveItems("o:" + data.uid, data.items));
+      if (data.payments && data.payments.length && (data.payUid || data.uid)) {
+        const sub = (data.items || []).reduce((a, l) => {
+          const m = S.menu.find((x) => x.id === l.menuId);
+          return a + (m ? Number(m.price) || 0 : 0) * (Number(l.qty) || 0);
+        }, 0);
+        out.push(liveSale("p:" + (data.payUid || data.uid), totalsOf(sub, data.discountType, data.discountValue), data.payments, { payFull: data.payFull }));
+      }
+    }
+    if (action === "payBill" && data.uid && data.orderId) {
+      const o = S.orders.find((x) => x.id === data.orderId);
+      if (o) out.push(liveSale("p:" + data.uid, { subtotal: o.subtotal, discount: o.discount || 0, tax: o.tax || 0, service: o.service || 0, total: o.total }, data.payments, { paidBefore: opts && opts.livePaidBefore }));
+    }
+    if (action === "batch" && Array.isArray(data.ops)) {
+      const g = data.ops.find((x) => x.action === "generateBill"), pb = data.ops.find((x) => x.action === "payBill");
+      const o = S.orders.find((x) => x.id === data.orderId);
+      if (o && pb && pb.data && pb.data.uid) {
+        const t = g ? totalsOf(o.subtotal, g.data.discountType, g.data.discountValue) : { subtotal: o.subtotal, discount: o.discount || 0, tax: o.tax || 0, service: o.service || 0, total: o.total };
+        out.push(liveSale("p:" + pb.data.uid, t, pb.data.payments, {}));
+      }
+    }
+    return out.filter(Boolean);
+  }
+  function liveKeys(action, data) {
+    if (!data) return [];
+    const k = [];
+    if ((action === "createOrder" || action === "quickSale") && data.uid) k.push("o:" + data.uid);
+    if (action === "quickSale" && (data.payUid || data.uid)) k.push("p:" + (data.payUid || data.uid));
+    if (action === "payBill" && data.uid) k.push("p:" + data.uid);
+    if (action === "batch" && Array.isArray(data.ops)) data.ops.forEach((x) => {
+      if (x.action === "payBill" && x.data && x.data.uid) k.push("p:" + x.data.uid);
+    });
+    return k;
+  }
+  function liveAdd(action, data, opts) {
+    let changed = false;
+    liveFor(action, data, opts).forEach((e) => {
+      if (LIVE.some((x) => x.key === e.key)) return;
+      LIVE.push(e);
+      changed = true;
+    });
+    if (changed) {
+      liveStore();
+      emit("live");
+    }
+  }
+  function liveSaved(action, data) {
+    const ks = liveKeys(action, data), now = Date.now();
+    let changed = false;
+    LIVE.forEach((e) => {
+      if (ks.includes(e.key) && !e.savedAt) {
+        e.savedAt = now;
+        changed = true;
+      }
+    });
+    if (changed) liveStore();
+  }
+  function liveDrop(action, data) {
+    const ks = liveKeys(action, data), n = LIVE.length;
+    LIVE = LIVE.filter((e) => !ks.includes(e.key));
+    if (LIVE.length !== n) {
+      liveStore();
+      emit("live");
+    }
+  }
+  /* Called with the time a dashboard request STARTED, when its reply arrives. */
+  function livePrune(startedAt) {
+    const day = liveDay(), n = LIVE.length;
+    LIVE = LIVE.filter((e) => e.day === day && !(e.savedAt && e.savedAt < startedAt));
+    if (LIVE.length !== n) liveStore();
+  }
+  /* Server dashboard numbers + this device's not-yet-counted sales + live open orders/tables. */
+  function liveDash(d) {
+    if (!d || !d.today) return d;
+    const x = JSON.parse(JSON.stringify(d));
+    const day = liveDay(), sameDay = !d.date || d.date === day;
+    if (sameDay) {
+      const keys = ["orders", "gross", "discount", "tax", "service", "net", "cash", "card", "bank", "other"];
+      const tops = {};
+      (x.topItems || []).forEach((i) => tops[i.name] = Object.assign({}, i));
+      LIVE.forEach((e) => {
+        if (e.day !== day) return;
+        keys.forEach((k) => {
+          if (e[k]) {
+            x.today[k] = r2((x.today[k] || 0) + e[k]);
+            if (x.month) x.month[k] = r2((x.month[k] || 0) + e[k]);
+          }
+        });
+        if (e.net && x.series && x.series.length) {
+          const last2 = x.series[x.series.length - 1];
+          if (!last2.date || last2.date === day) {
+            last2.net = r2((last2.net || 0) + e.net);
+            last2.orders = (last2.orders || 0) + (e.orders || 0);
+          }
+        }
+        (e.items || []).forEach((i) => {
+          const t = tops[i.name] = tops[i.name] || { name: i.name, qty: 0, revenue: 0 };
+          t.qty += i.qty;
+        });
+      });
+      x.topItems = Object.values(tops).sort((a, b) => b.qty - a.qty).slice(0, 6);
+    }
+    if (S.ready) {
+      const open = S.orders.filter((o) => OPEN.includes(o.status));
+      x.openOrders = open.length;
+      x.openValue = r2(open.reduce((a, o) => a + (Number(o.total) || 0), 0));
+      const tables = S.tables.filter((t) => t.active);
+      x.tablesTotal = tables.length;
+      x.tablesBusy = tables.filter((t) => t.currentOrderId).length;
+    }
+    return x;
+  }
+  // ---- Device copy of full orders and their bills, so Bill / Payment / Receipt open instantly.
+  var DOCS = { o: {}, b: {} };
+  var docsT = null;
+  function docsKey() {
+    return session && session.key ? "hotelpos.docs:" + session.key : "";
+  }
+  function docsLoad() {
+    const v = docsKey() ? LDB.get(docsKey()) : null;
+    DOCS = v && v.o && v.b ? v : { o: {}, b: {} };
+  }
+  function docsSave() {
+    clearTimeout(docsT);
+    docsT = setTimeout(() => {
+      const k = docsKey();
+      if (!k) return;
+      ["o", "b"].forEach((t) => {
+        const ids = Object.keys(DOCS[t]);
+        if (ids.length > 300) ids.sort((a, b) => DOCS[t][a].at - DOCS[t][b].at).slice(0, ids.length - 300).forEach((id) => delete DOCS[t][id]);
+      });
+      LDB.set(k, DOCS);
+    }, 600);
+  }
+  function rememberDoc(order, bill) {
+    const now = Date.now();
+    if (order && order.id && Array.isArray(order.items) && !order.tmp) DOCS.o[order.id] = { v: order, at: now };
+    if (bill && bill.orderId) DOCS.b[bill.orderId] = { v: bill, at: now };
+    if (order || bill) docsSave();
+  }
+  function docOrder(id) {
+    const live = S.orders.find((x) => x.id === id && Array.isArray(x.items));
+    if (live) return live;
+    return DOCS.o[id] ? DOCS.o[id].v : null;
+  }
+  function docBill(orderId) {
+    return DOCS.b[orderId] ? DOCS.b[orderId].v : null;
+  }
+  /* A bill built from the order's own totals, shown until the real bill arrives from the sheet. */
+  function provisionalBill(o) {
+    const paid = o.status === "PAID";
+    const disc = Number(o.discount) || 0;
+    return {
+      id: o.billId || "BIL-" + String(o.id).substring(4),
+      orderId: o.id,
+      subtotal: o.subtotal,
+      discountType: disc > 0 ? "FIXED" : "NONE",
+      discountValue: disc > 0 ? disc : 0,
+      discount: disc,
+      discountReason: "",
+      tax: o.tax || 0,
+      service: o.service || 0,
+      roundOff: r2(o.total - (o.subtotal - disc + (o.service || 0) + (o.tax || 0))),
+      total: o.total,
+      paid: paid ? o.total : 0,
+      paymentStatus: paid ? "PAID" : "UNPAID",
+      status: "ACTIVE",
+      payments: [],
+      provisional: true
+    };
+  }
+  /* One request for order + bill (falls back to the order alone when no bill exists yet). */
+  async function fetchOrderAndBill(orderId, hasBill) {
+    if (hasBill !== false) {
+      try {
+        const r = await read2("getBill", { orderId });
+        rememberDoc(r.order, r.bill);
+        return { order: r.order, bill: r.bill };
+      } catch (e) {
+        if (!(e instanceof ApiError) || e.code !== "NOT_FOUND") throw e;
+      }
+    }
+    const o = (await read2("getOrder", { orderId })).order;
+    rememberDoc(o, null);
+    return { order: o, bill: null };
+  }
   function save(action, data = {}, opts = {}) {
     S.pending++;
     setSync("saving");
+    try {
+      liveAdd(action, data, opts);
+    } catch (e) {
+      console.warn("live dashboard", e);
+    }
     const k = chainKey(action, data);
     const run = () => saveNow(action, data, opts);
     let p;
@@ -858,6 +1104,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     const opId = opts.opId || newId("op");
     try {
       const r = await raw(action, data, { opId, timeout: opts.timeout });
+      liveSaved(action, data);
       merge(action, r);
       memoFresh.clear();
       return r;
@@ -869,6 +1116,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
         setSync("idle");
         return { queued: true, opId };
       }
+      liveDrop(action, data);
       setSync("error");
       throw err;
     }
@@ -959,6 +1207,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
   }
   function merge(action, r) {
     if (!r || typeof r !== "object") return;
+    if (r.order || r.bill) rememberDoc(r.order, r.bill);
     if (r.order) putOrder(r.order);
     if (r.settings && action === "saveSettings") {
       S.settings = r.settings;
@@ -980,7 +1229,28 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       store.setBoot({ key: session.key, user: S.user, hotel: S.hotel, settings: S.settings, categories: S.categories, menu: S.menu, tables: S.tables, orders: S.orders, rev: S.rev, serverVersion: S.serverVersion });
     }, 800);
   }
+  var qrSeen = /* @__PURE__ */ new Set(), qrDone = /* @__PURE__ */ new Set(), qrPrimed = false;
+  /* Customer (QR) orders waiting for staff. New ones raise an alert once per device. */
+  function applyQr(list) {
+    if (!Array.isArray(list)) return false;
+    qrAll = list;
+    const before = JSON.stringify(S.qr.map((x) => x.id));
+    S.qr = list.filter((x) => !qrDone.has(x.id));
+    const fresh = qrPrimed ? S.qr.filter((x) => !qrSeen.has(x.id)) : [];
+    S.qr.forEach((x) => qrSeen.add(x.id));
+    qrPrimed = true;
+    if (fresh.length) S.qrFresh = fresh;
+    return before !== JSON.stringify(S.qr.map((x) => x.id)) || fresh.length > 0;
+  }
+  var qrAll = [];
+  function qrHandled(id, done) {
+    if (done) qrDone.add(id);
+    else qrDone.delete(id);
+    S.qr = qrAll.filter((x) => !qrDone.has(x.id));
+    emit("qr");
+  }
   function apply(b, full) {
+    if (b.qr && applyQr(b.qr) && !full) emit("qr");
     if (b.user) S.user = b.user;
     if (b.hotel) S.hotel = b.hotel;
     if (b.settings) S.settings = b.settings;
@@ -1011,7 +1281,13 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     S.offline = false;
     Object.keys(memo).forEach((k) => delete memo[k]);
     memoFresh.clear();
+    qrSeen.clear();
+    qrDone.clear();
+    qrPrimed = false;
+    S.qr = [];
     loadMemo(sess.key);
+    liveLoad();
+    docsLoad();
     S.queued = readQ().length;
     let painted = false;
     if (firstBoot) {
@@ -1054,7 +1330,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
   }
   function delay() {
     if (Date.now() - lastTouch > 18e4) return 3e4;
-    return { kitchen: 5e3, tables: 7e3, pos: 8e3, orders: 1e4 }[screenKey] || 15e3;
+    return { kitchen: 5e3, tables: 7e3, pos: 8e3, dashboard: 6e3, orders: 1e4 }[screenKey] || 15e3;
   }
   function loop() {
     clearTimeout(pollTimer);
@@ -1264,7 +1540,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     const M2 = (n) => money(n, S.settings);
     const box = h("div", { class: "stack" });
     el.replaceChildren(box);
-    let alive = true, loading = false;
+    let alive = true, loading = false, again2 = false;
     function stat(label, value, sub, cls) {
       return h("div", { class: "stat " + (cls || "") }, h("div", { class: "k" }, label), h("div", { class: "v" }, value), sub ? h("div", { class: "s" }, sub) : null);
     }
@@ -1277,6 +1553,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       const parts = [];
       if (can("MANAGE_SETTINGS") || can("EDIT_MENU")) parts.push(checklist());
       if (err) parts.push(h("div", { class: "form-error" }, err));
+      if (d) d = liveDash(d);
       if (d) {
         const t = d.today;
         parts.push(h(
@@ -1333,29 +1610,122 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       );
     }
     async function load() {
-      if (loading || !alive || !can("VIEW_DASHBOARD")) return;
+      if (!alive || !can("VIEW_DASHBOARD")) return;
+      if (loading) {
+        again2 = true;
+        return;
+      }
       loading = true;
-      await swr("dashboard", {}, (r) => {
+      const startedAt = Date.now();
+      await swr("dashboard", {}, (r, cached) => {
+        if (!cached) livePrune(startedAt);
         last = r;
         if (alive) draw(last);
       }, (e) => {
         if (alive) draw(last, errText(e));
       });
       loading = false;
+      if (again2 && alive) {
+        again2 = false;
+        load();
+      }
     }
     draw(last);
     load();
     const timer = setInterval(() => {
       if (!document.hidden) load();
     }, 2e4);
+    let lt = null;
     const off = on((k) => {
-      if (k.includes("orders") && alive) load();
+      if (!alive) return;
+      // Redraw at once from this device's data, then confirm with the server shortly after.
+      if (k.includes("live") || k.includes("orders") || k.includes("tables") || k.includes("all")) draw(last);
+      if (k.includes("orders") || k.includes("all")) {
+        clearTimeout(lt);
+        lt = setTimeout(load, 400);
+      }
     });
     return () => {
       alive = false;
       clearInterval(timer);
+      clearTimeout(lt);
       off();
     };
+  }
+
+
+  // web/js/qr-tools.js
+  function qrMatrix(text) {
+    const q = window.__qrcode(0, "M");
+    q.addData(text);
+    q.make();
+    const n = q.getModuleCount(), rows = [];
+    for (let r = 0; r < n; r++) {
+      const row = [];
+      for (let c = 0; c < n; c++) row.push(q.isDark(r, c));
+      rows.push(row);
+    }
+    return rows;
+  }
+  function qrSvgMarkup(text, cell, color) {
+    const m = qrMatrix(text), n = m.length, pad = 4, size = (n + pad * 2) * cell;
+    let d = "";
+    m.forEach((row, r) => row.forEach((on2, c) => {
+      if (on2) d += "M" + (c + pad) * cell + " " + (r + pad) * cell + "h" + cell + "v" + cell + "h-" + cell + "z";
+    }));
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + size + " " + size + '" width="' + size + '" height="' + size + '" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="' + d + '" fill="' + (color || "#0b1220") + '"/></svg>';
+  }
+  function qrSvg(text, cell) {
+    return svgEl(qrSvgMarkup(text, cell));
+  }
+  function downloadQr(url, name) {
+    const m = qrMatrix(url), n = m.length, pad = 4, cell = 24, size = (n + pad * 2) * cell;
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = size;
+    const g = cv.getContext("2d");
+    g.fillStyle = "#fff";
+    g.fillRect(0, 0, size, size);
+    g.fillStyle = "#0b1220";
+    m.forEach((row, r) => row.forEach((on2, c) => {
+      if (on2) g.fillRect((c + pad) * cell, (r + pad) * cell, cell, cell);
+    }));
+    const a = document.createElement("a");
+    a.href = cv.toDataURL("image/png");
+    a.download = (String(name || "menu").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "menu") + "-QR-menu.png";
+    document.body.append(a);
+    a.click();
+    a.remove();
+  }
+  function printQrPoster(url, name) {
+    const svg = qrSvgMarkup(url, 10);
+    const card = `<div class="card"><div class="top">${esc(name || "Our menu")}</div><div class="ey">SCAN TO SEE OUR MENU</div>${S.settings.QR_ORDERING_ENABLED === "true" ? '<div class="sub">&amp; order from your table</div>' : ""}<div class="qr">${svg}</div><div class="hint">Open your phone camera and point it at the code</div><div class="foot">Powered by Hotel POS \xB7 devlinks.online</div></div>`;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>QR menu</title><style>
+      @page { size: A4; margin: 10mm; }
+      * { box-sizing: border-box; } body { margin: 0; font-family: Georgia, "Times New Roman", serif; }
+      .sheet { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
+      .card { border: 1.2mm solid #0b1220; border-radius: 6mm; padding: 9mm 7mm 6mm; text-align: center; page-break-inside: avoid; outline: .5mm solid #c9973f; outline-offset: -3mm; }
+      .top { font-size: 22pt; font-weight: 700; color: #0b1220; }
+      .ey { margin-top: 3mm; font: 700 9.5pt Arial, sans-serif; letter-spacing: 2.5pt; color: #9c6b1f; }
+      .sub { font: 10pt Arial, sans-serif; color: #444; margin-top: 1mm; }
+      .qr svg { width: 62mm; height: 62mm; margin: 4mm auto 2mm; display: block; }
+      .hint { font: 8.5pt Arial, sans-serif; color: #555; }
+      .foot { margin-top: 3mm; font: 7.5pt Arial, sans-serif; color: #888; }
+    </style></head><body><div class="sheet">${card}${card}${card}${card}</div></body></html>`;
+    const frame = h("iframe", { style: "position:fixed;right:0;bottom:0;width:0;height:0;border:0", "aria-hidden": "true" });
+    document.body.append(frame);
+    const doc = frame.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+    setTimeout(() => {
+      try {
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+      } catch (e) {
+        toast("Printing is not available in this browser.", "error");
+      }
+      setTimeout(() => frame.remove(), 6e4);
+    }, 200);
   }
 
   // web/js/s-tables.js
@@ -1393,7 +1763,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       return null;
     }
     let id = typeof idOrOrder === "string" ? idOrOrder : idOrOrder.id;
-    let order = typeof idOrOrder === "string" ? S.orders.find((x) => x.id === id) || null : idOrOrder;
+    let order = typeof idOrOrder === "string" ? S.orders.find((x) => x.id === id) || docOrder(id) || null : idOrOrder;
     const body = h("div", { class: "order-dlg" });
     const modal = openModal({ title: "Order", content: body, actions: null });
     modal.box.classList.add("wide");
@@ -1402,9 +1772,24 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       body.replaceChildren(loadingBlock());
       try {
         order = (await read2("getOrder", { orderId: id })).order;
+        rememberDoc(order, null);
         draw();
       } catch (e) {
         body.replaceChildren(h("div", { class: "form-error" }, errText(e)));
+      }
+    }
+    async function quietRefresh() {
+      const mark = order;
+      try {
+        const o = (await read2("getOrder", { orderId: id })).order;
+        rememberDoc(o, null);
+        if (order !== mark || !modal.box.isConnected) return;
+        const sig2 = (x) => JSON.stringify([x.status, x.total, x.items.map((l) => [l.id, l.qty, l.kitchen])]);
+        if (sig2(o) !== sig2(mark)) {
+          order = o;
+          draw();
+        }
+      } catch (e) {
       }
     }
     function cur() {
@@ -1555,7 +1940,10 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       });
     }
     if (!order || !order.items) load();
-    else draw();
+    else {
+      draw();
+      if (!S.orders.some((x) => x.id === id)) quietRefresh();
+    }
     return modal;
   }
   var PAY_METHODS = [["CASH", "Cash"], ["CARD", "Card"], ["ONLINE", "Online / bank"]];
@@ -1665,18 +2053,45 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     const disc = { type: "NONE", value: 0, reason: "" };
     const pays = [{ method: "CASH", amount: "", reference: "" }];
     const payUid = newId("pay");
+    function takeDisc() {
+      if (!bill) return;
+      disc.type = bill.discountType || "NONE";
+      disc.value = bill.discountValue || 0;
+      disc.reason = bill.discountReason || "";
+    }
+    const billSig = () => JSON.stringify([order && order.status, order && order.total, order && order.items && order.items.length, bill && [bill.total, bill.paid, bill.paymentStatus, (bill.payments || []).length, bill.discountType, bill.discountValue]]);
+    async function confirmFromSheet() {
+      if (order.status === "OPEN" && !order.billId) return;
+      const markO = order, markB = bill, before = billSig();
+      try {
+        const r = await fetchOrderAndBill(orderId, true);
+        if (order !== markO || bill !== markB || !modal.box.isConnected) return;
+        order = r.order;
+        bill = r.bill;
+        if (billSig() !== before) {
+          takeDisc();
+          draw();
+        }
+      } catch (e) {
+      }
+    }
     async function load() {
+      const local = order && order.items ? order : docOrder(orderId);
+      if (local) {
+        order = local;
+        const lb = docBill(orderId);
+        if (order.billId || order.status !== "OPEN") bill = lb && (!order.billId || lb.id === order.billId) ? lb : provisionalBill(order);
+        takeDisc();
+        draw();
+        confirmFromSheet();
+        return;
+      }
       body.replaceChildren(loadingBlock());
       try {
-        if (!order || !order.items) order = (await read2("getOrder", { orderId })).order;
-        if (order.billId) {
-          const r = await read2("getBill", { orderId });
-          bill = r.bill;
-          order = r.order;
-          disc.type = bill.discountType;
-          disc.value = bill.discountValue;
-          disc.reason = bill.discountReason;
-        }
+        const r = await fetchOrderAndBill(orderId);
+        order = r.order;
+        bill = r.bill;
+        takeDisc();
         draw();
       } catch (e) {
         body.replaceChildren(h("div", { class: "form-error" }, errText(e)));
@@ -1763,12 +2178,13 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       if (x.print) printReceipt(localOrder, localBill, x);
       let job;
       if (regen) job = billAndPay(orderId, { discountType: disc.type, discountValue: disc.value, discountReason: disc.reason, payments, payUid });
-      else if (x.pay) job = save("payBill", { orderId, uid: payUid, payments });
+      else if (x.pay) job = save("payBill", { orderId, uid: payUid, payments }, { livePaidBefore: paidBefore });
       else job = Promise.resolve(null);
       const prevBill = bill, prevOrder = order;
       bill = localBill;
       order = localOrder;
       putOrder(localOrder);
+      rememberDoc(localOrder, localBill);
       if (x.pay) {
         toast("Paid \u2713 " + M(t.total) + (x.change > 0 ? " \xB7 Change " + M(x.change) : ""), "ok", 2600);
         modal.close();
@@ -1922,7 +2338,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
           if (S.settings.AUTO_PRINT === "true") printReceipt(order, bill);
         }
         draw();
-        const p = save("payBill", { orderId, uid: payUid + "-" + prevBill.payments.length, payments: list });
+        const p = save("payBill", { orderId, uid: payUid + "-" + prevBill.payments.length, payments: list }, { livePaidBefore: prevBill.paid });
         p.then((r) => {
           if (r.queued) return;
           bill = r.bill;
@@ -3551,6 +3967,77 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     };
   }
 
+
+  // web/js/s-qr.js
+  var s_qr_exports = {};
+  __export(s_qr_exports, {
+    render: () => renderQr
+  });
+  function renderQr(el, ctx) {
+    const M2 = (n) => money(n, S.settings);
+    const box = h("div", { class: "stack" });
+    el.replaceChildren(box);
+    const ago = (stamp2) => {
+      const t = Date.parse(String(stamp2 || "").replace(" ", "T"));
+      if (!t) return "";
+      const m = Math.max(0, Math.round((Date.now() - t) / 6e4));
+      return m < 1 ? "just now" : m < 60 ? m + " min ago" : Math.round(m / 60) + " h ago";
+    };
+    function card(q) {
+      const accept = h("button", { class: "btn btn-primary", type: "button" }, "✓ Accept & send to kitchen");
+      const reject = h("button", { class: "btn btn-danger", type: "button" }, "Reject");
+      accept.onclick = () => {
+        qrHandled(q.id, true);
+        save("acceptQrOrder", { qrId: q.id, send: can("SEND_TO_KITCHEN") }, { queue: false }).then((r) => {
+          toast("Accepted ✓ " + (r && r.order ? r.order.id + (r.order.tableName ? " \xB7 " + r.order.tableName : " \xB7 Takeaway") : ""), "ok", 3500);
+        }).catch((e) => {
+          qrHandled(q.id, false);
+          toast("Not accepted: " + errText(e), "error", 7e3);
+        });
+      };
+      reject.onclick = async () => {
+        const reason = await promptDialog("Reject QR order", "Reason (the customer will see it)", { required: false, confirm: "Reject order" });
+        if (reason === null || reason === void 0) return;
+        qrHandled(q.id, true);
+        save("rejectQrOrder", { qrId: q.id, reason: reason || "" }, { queue: false }).then(() => toast("Order rejected", "info", 2500)).catch((e) => {
+          qrHandled(q.id, false);
+          toast("Not saved: " + errText(e), "error", 7e3);
+        });
+      };
+      return h(
+        "article",
+        { class: "qr-card" },
+        h(
+          "header",
+          null,
+          h("div", null, h("strong", null, q.name), h("a", { href: "tel:" + q.phone, class: "qr-phone" }, q.phone)),
+          h("div", { class: "qr-where" + (q.type === "TAKEAWAY" ? " tk" : "") }, q.type === "TAKEAWAY" ? "Takeaway" : q.tableName || "Dine-in"),
+          h("span", { class: "muted small" }, ago(q.at))
+        ),
+        h("div", { class: "qr-items" }, (q.items || []).map((l) => h("div", { class: "trow" }, h("span", null, h("b", null, l.qty + "\xD7 "), l.name, l.notes ? h("small", null, " \xB7 " + l.notes) : null), h("span", null, M2(l.qty * l.price))))),
+        q.notes ? h("div", { class: "qr-note" }, "\u{1F4DD} ", q.notes) : null,
+        h("div", { class: "trow grand" }, h("span", null, "Items total"), h("span", null, M2(q.subtotal))),
+        h("footer", null, reject, accept)
+      );
+    }
+    function draw() {
+      const parts = [h("p", { class: "muted" }, "Orders customers sent from the QR menu. Accept to make a normal order and send it to the kitchen.")];
+      if (!S.qr.length) parts.push(emptyState("No QR orders waiting", "New customer orders appear here with a sound alert."));
+      else parts.push(h("div", { class: "qr-grid" }, S.qr.map(card)));
+      box.replaceChildren(...parts);
+    }
+    draw();
+    S.qrFresh = [];
+    const off = on((k) => {
+      if (k.includes("qr") || k.includes("all")) draw();
+    });
+    const tm = setInterval(draw, 6e4);
+    return () => {
+      off();
+      clearInterval(tm);
+    };
+  }
+
   // web/js/s-settings.js
   var s_settings_exports = {};
   __export(s_settings_exports, {
@@ -3563,6 +4050,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       ["billing", "Tax & billing", can("MANAGE_SETTINGS")],
       ["receipt", "Receipt", can("MANAGE_SETTINGS")],
       ["tables", "Tables", can("MANAGE_TABLES")],
+      ["qrmenu", "QR menu", can("MANAGE_SETTINGS")],
       ["account", "My account", true],
       ["data", "Data & backup", can("EXPORT_BACKUP") || S.user.isOwner]
     ].filter((x) => x[2]);
@@ -3575,7 +4063,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
         tab = k;
         show();
       }));
-      body.replaceChildren({ hotel, billing, receipt, tables, account, data }[tab]());
+      body.replaceChildren({ hotel, billing, receipt, tables, qrmenu, account, data }[tab]());
     }
     const panel = (title, ...kids) => h("section", { class: "panel" }, h("header", null, h("h2", null, title)), h("div", { class: "pad" }, kids));
     const yn = (label, key) => {
@@ -3612,6 +4100,48 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
         v.SETUP_COMPLETE = true;
         return v;
       })));
+    }
+    function qrmenu() {
+      const id = S.hotel && S.hotel.id || "";
+      const url = location.origin + location.pathname + "#/menu/" + id;
+      const old = !verAtLeast(S.serverVersion, "1.3.0");
+      const on1 = yn("Show the menu to customers who scan the QR code", "QR_MENU_ENABLED");
+      const on2 = yn("Customers can send orders from the menu (staff accept them first)", "QR_ORDERING_ENABLED");
+      const qrBox = h("div", { class: "qr-preview" }, qrSvg(url, 6));
+      const name = S.settings.HOTEL_NAME || S.hotel && S.hotel.name || "";
+      return h(
+        "div",
+        { class: "stack" },
+        old ? h("div", { class: "band s-warn", role: "alert" }, h("div", null, h("p", null, h("b", null, "Update your hotel script first. "), "The QR menu needs hotel script version 1.3.0 (yours: " + (S.serverVersion || "unknown") + "). Owner → Account & connection → Copy Apps Script, paste it in your hotel sheet's Apps Script, Save, then Deploy → Manage deployments → Edit → New version."))) : null,
+        panel(
+          "QR menu",
+          h("p", { class: "muted" }, "Print this QR code and put it on your tables. Customers scan it with their phone camera to see your menu (no app, no sign-in). If ordering is on, their order appears in “QR orders” with a sound alert, and you accept it before it goes to the kitchen."),
+          h("div", { class: "stack" }, on1.el, on2.el),
+          h("div", null, saveBtn(() => ({ QR_MENU_ENABLED: on1.get(), QR_ORDERING_ENABLED: on2.get() && on1.get() }), () => setTimeout(show, 50)))
+        ),
+        panel(
+          "Your QR code",
+          h(
+            "div",
+            { class: "qr-setup" },
+            qrBox,
+            h(
+              "div",
+              { class: "stack" },
+              h("div", null, h("div", { class: "muted small" }, "Menu link"), h("div", { class: "qr-url" }, url)),
+              h(
+                "div",
+                { class: "row-btns" },
+                copyButton(url, "Copy link", "Link copied", false),
+                h("a", { class: "btn", href: url, target: "_blank", rel: "noopener" }, "Open menu"),
+                h("button", { class: "btn", type: "button", onclick: () => downloadQr(url, name) }, "⬇ Download QR"),
+                h("button", { class: "btn btn-primary", type: "button", onclick: () => printQrPoster(url, name) }, "\u{1F5A8} Print table card")
+              ),
+              S.settings.QR_MENU_ENABLED !== "true" ? h("div", { class: "muted small" }, "The QR menu is switched off: customers who scan will see “menu not available” until you switch it on above.") : null
+            )
+          )
+        )
+      );
     }
     function billing() {
       const tax = yn("Charge tax", "TAX_ENABLED"), svc = yn("Charge service", "SERVICE_ENABLED"), onSvc = yn("Tax is also charged on the service charge", "TAX_ON_SERVICE");
@@ -3772,6 +4302,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     { key: "pos", label: "New order", icon: "\uFF0B", perms: ["CREATE_ORDERS"], mod: s_pos_exports },
     { key: "kitchen", label: "Kitchen", icon: "\u2668", perms: ["VIEW_KITCHEN"], mod: s_kitchen_exports },
     { key: "orders", label: "Orders & bills", icon: "\u2630", perms: ["VIEW_ORDERS"], mod: s_orders_exports },
+    { key: "qr", label: "QR orders", icon: "\u25A3", perms: ["CREATE_ORDERS"], mod: s_qr_exports, show: () => S.settings.QR_MENU_ENABLED === "true" && S.settings.QR_ORDERING_ENABLED === "true" },
     { key: "menu", label: "Menu", icon: "\u2756", perms: ["VIEW_MENU"], mod: s_menu_exports },
     { key: "customers", label: "Customers", icon: "\u263A", perms: ["VIEW_CUSTOMERS"], mod: s_people_exports },
     { key: "reservations", label: "Reservations", icon: "\u25F7", perms: ["VIEW_RESERVATIONS"], mod: s_reservations_exports },
@@ -3781,7 +4312,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     { key: "activity", label: "Activity log", icon: "\u270E", perms: ["VIEW_ACTIVITY"], mod: s_activity_exports },
     { key: "settings", label: "Settings", icon: "\u2699", perms: null, mod: s_settings_exports }
   ];
-  var allowed = () => SCREENS.filter((s) => !s.perms || canAny(s.perms));
+  var allowed = () => SCREENS.filter((s) => (!s.perms || canAny(s.perms)) && (!s.show || s.show()));
   var homeScreen = () => {
     const a = allowed();
     return (a.find((s) => s.key === "dashboard") || a.find((s) => s.key === "tables") || a.find((s) => s.key === "kitchen") || a[0] || SCREENS[SCREENS.length - 1]).key;
@@ -3868,7 +4399,8 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
         "a",
         { class: "nav-item" + (s.key === item.key ? " on" : ""), href: "#/app/" + s.key, onclick: () => document.body.classList.remove("nav-open") },
         h("span", { class: "ni" }, s.icon),
-        s.label
+        s.label,
+        s.key === "qr" ? h("span", { class: "nav-badge", hidden: !S.qr.length }, S.qr.length) : null
       ))),
       h(
         "div",
@@ -3911,11 +4443,40 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       }
     }));
     offs.push(on((keys) => {
-      if (!keys.includes("tick") && !keys.includes("all") && !keys.includes("menu")) return;
+      if (!keys.includes("tick") && !keys.includes("all") && !keys.includes("menu") && !keys.includes("settings")) return;
       const now = allowed().map((s) => s.key).join();
       if (now !== list.map((s) => s.key).join()) {
         nav2("app/" + (allowed().some((s) => s.key === current) ? current : homeScreen()));
       }
+    }));
+    const qrAlert = h("div", { class: "qr-alert", hidden: true, role: "status", "aria-live": "polite" });
+    root2.querySelector(".app").append(qrAlert);
+    let qrAlertT = null;
+    offs.push(on((keys) => {
+      if (!keys.includes("qr") && !keys.includes("all")) return;
+      const b = side.querySelector(".nav-badge");
+      if (b) {
+        b.textContent = S.qr.length;
+        b.hidden = !S.qr.length;
+      }
+      const fresh = S.qrFresh;
+      S.qrFresh = [];
+      if (!fresh.length || !can("CREATE_ORDERS") || current === "qr") return;
+      const x = fresh[0];
+      beep();
+      setTimeout(beep, 260);
+      qrAlert.replaceChildren(
+        h("div", { class: "qa-ic" }, "\u{1F514}"),
+        h("div", { class: "qa-t" }, h("strong", null, fresh.length > 1 ? fresh.length + " new QR orders" : "New QR order"), h("span", null, x.name + " \xB7 " + (x.type === "TAKEAWAY" ? "Takeaway" : x.tableName) + " \xB7 " + money(x.subtotal, S.settings))),
+        h("button", { class: "btn btn-primary btn-small", type: "button", onclick: () => {
+          qrAlert.hidden = true;
+          nav2("app/qr");
+        } }, "View"),
+        h("button", { class: "qa-x", type: "button", "aria-label": "Close", onclick: () => qrAlert.hidden = true }, "\u2715")
+      );
+      qrAlert.hidden = false;
+      clearTimeout(qrAlertT);
+      qrAlertT = setTimeout(() => qrAlert.hidden = true, 2e4);
     }));
     const ctx = { nav: (s, arg) => {
       S.handoff = arg || null;
@@ -5159,6 +5720,298 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     await load();
   }
 
+
+  // web/js/qr-menu.js
+  // Public QR menu: opened by customers from the hotel's QR code (#/menu/HTL-0001). No sign-in.
+  function publicMenuView(root2, hotelId) {
+    hotelId = String(hotelId || "").toUpperCase();
+    document.title = "Menu";
+    const KEY = "hotelpos.qm." + hotelId;
+    const mem = (() => {
+      try {
+        return JSON.parse(localStorage.getItem(KEY) || "{}");
+      } catch (e) {
+        return {};
+      }
+    })();
+    const saveMem = () => {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(mem));
+      } catch (e) {
+      }
+    };
+    let link = null, data = null, cart = mem.cart || {}, filter = "", activeCat = "", statusTimer = null;
+    const st = { type: mem.type || "DINE_IN", tableId: mem.tableId || "", name: mem.name || "", phone: mem.phone || "", notes: "" };
+    const page = h("div", { class: "qm" });
+    root2.replaceChildren(page);
+    const M2 = (n) => money(n, data ? data.settings : {});
+    async function resolve(force) {
+      if (!force && link && Date.now() - link.at < 5 * 3600 * 1e3) return link;
+      const r = await call("resolveMenu", { hotelId });
+      link = { url: r.appScriptUrl, token: r.menuToken, name: r.hotelName, at: Date.now() };
+      return link;
+    }
+    async function pub(action, d, retried) {
+      const l = await resolve(false);
+      try {
+        return await call(action, Object.assign({ token: l.token }, d || {}), "", l.url);
+      } catch (e) {
+        if (!retried && e instanceof ApiError && e.code === "MENU_LINK_EXPIRED") {
+          await resolve(true);
+          return pub(action, d, true);
+        }
+        throw e;
+      }
+    }
+    const lines = () => Object.keys(cart).map((id) => {
+      const m = data && data.menu.find((x) => x.id === id);
+      return m ? { m, qty: cart[id].qty } : null;
+    }).filter((x) => x && x.qty > 0);
+    const count = () => lines().reduce((a, l) => a + l.qty, 0);
+    const subtotal = () => lines().reduce((a, l) => a + l.qty * l.m.price, 0);
+    function setQty(id, q) {
+      q = Math.max(0, Math.min(50, q));
+      if (q) cart[id] = { qty: q };
+      else delete cart[id];
+      mem.cart = cart;
+      saveMem();
+      drawBar();
+      page.querySelectorAll('[data-qid="' + id + '"]').forEach((el) => el.replaceWith(qtyCtl(data.menu.find((x) => x.id === id))));
+    }
+    function qtyCtl(m) {
+      const q = cart[m.id] ? cart[m.id].qty : 0;
+      if (!m.available) return h("span", { class: "qm-sold", "data-qid": m.id }, "Sold out");
+      if (!data.ordering) return h("span", { "data-qid": m.id });
+      if (!q) return h("button", { class: "qm-add", type: "button", "data-qid": m.id, "aria-label": "Add " + m.name, onclick: () => setQty(m.id, 1) }, "Add", h("span", { "aria-hidden": "true" }, "+"));
+      return h(
+        "div",
+        { class: "qm-step", "data-qid": m.id },
+        h("button", { type: "button", "aria-label": "One less", onclick: () => setQty(m.id, q - 1) }, "−"),
+        h("span", null, q),
+        h("button", { type: "button", "aria-label": "One more", onclick: () => setQty(m.id, q + 1) }, "+")
+      );
+    }
+    function itemCard(m) {
+      const img = m.thumbUrl || m.imageUrl;
+      return h(
+        "article",
+        { class: "qm-item" + (m.available ? "" : " off") },
+        h(
+          "div",
+          { class: "qm-item-body" },
+          h("h3", null, m.name, m.featured ? h("span", { class: "qm-star", title: "Popular" }, "★") : null),
+          m.description ? h("p", null, m.description) : null,
+          h("div", { class: "qm-price" }, M2(m.price))
+        ),
+        h(
+          "div",
+          { class: "qm-item-side" },
+          img ? h("div", { class: "qm-img" }, h("img", { src: img, alt: "", loading: "lazy", referrerpolicy: "no-referrer", onerror: (e) => e.target.parentNode.classList.add("noimg") })) : h("div", { class: "qm-img noimg" }, h("span", null, (m.name || "?").charAt(0))),
+          qtyCtl(m)
+        )
+      );
+    }
+    const bar = h("div", { class: "qm-bar", hidden: true });
+    function drawBar() {
+      const n = count();
+      bar.hidden = !n || !data || !data.ordering;
+      if (bar.hidden) return;
+      bar.replaceChildren(h(
+        "button",
+        { class: "qm-bar-btn", type: "button", onclick: openCart },
+        h("span", { class: "qm-bar-n" }, n),
+        h("span", null, "View order"),
+        h("strong", null, M2(subtotal()))
+      ));
+    }
+    function drawMenu() {
+      const q = filter.trim().toLowerCase();
+      const cats = data.categories.slice();
+      const loose = data.menu.filter((m) => !m.categoryId || !cats.some((c) => c.id === m.categoryId));
+      if (loose.length) cats.push({ id: "", name: "More" });
+      const chips = h("nav", { class: "qm-chips", "aria-label": "Categories" }, cats.map((c) => h("button", { type: "button", class: c.id === activeCat ? "on" : "", onclick: () => {
+        activeCat = c.id;
+        const sec = page.querySelector('[data-cat="' + c.id + '"]');
+        if (sec) window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY - 118, behavior: "smooth" });
+        chips.querySelectorAll("button").forEach((b, i) => b.classList.toggle("on", cats[i].id === c.id));
+      } }, c.name)));
+      const sections = cats.map((c) => {
+        const items = data.menu.filter((m) => (c.id ? m.categoryId === c.id : !m.categoryId || !data.categories.some((x) => x.id === m.categoryId)) && (!q || m.name.toLowerCase().includes(q) || String(m.description || "").toLowerCase().includes(q)));
+        if (!items.length) return null;
+        return h("section", { class: "qm-sec", "data-cat": c.id }, h("h2", null, c.name, h("span", null, items.length)), h("div", { class: "qm-list" }, items.map(itemCard)));
+      }).filter(Boolean);
+      const featured = !q ? data.menu.filter((m) => m.featured && m.available) : [];
+      const search = h("input", { class: "qm-search", type: "search", placeholder: "Search the menu", value: filter, "aria-label": "Search the menu", oninput: (e) => {
+        filter = e.target.value;
+        const pos = e.target.selectionStart;
+        drawMenu();
+        const s2 = page.querySelector(".qm-search");
+        s2.focus();
+        try {
+          s2.setSelectionRange(pos, pos);
+        } catch (x) {
+        }
+      } });
+      const hd = data.hotel;
+      page.replaceChildren(
+        h(
+          "header",
+          { class: "qm-hero" },
+          h("div", { class: "qm-hero-in" }, h("div", { class: "qm-eyebrow" }, data.ordering ? "Menu \xB7 Order from your table" : "Menu"), h("h1", null, hd.name || link.name), hd.address || hd.phone ? h("p", null, [hd.address, hd.phone].filter(Boolean).join(" \xB7 ")) : null)
+        ),
+        h("div", { class: "qm-sticky" }, h("div", { class: "qm-search-wrap" }, search), cats.length > 1 ? chips : null),
+        featured.length ? h("section", { class: "qm-feat" }, h("h2", null, "Popular"), h("div", { class: "qm-feat-row" }, featured.map((m) => h(
+          "div",
+          { class: "qm-fcard" },
+          m.thumbUrl || m.imageUrl ? h("img", { src: m.thumbUrl || m.imageUrl, alt: "", loading: "lazy", referrerpolicy: "no-referrer" }) : h("div", { class: "qm-fimg" }, m.name.charAt(0)),
+          h("div", { class: "qm-fbody" }, h("b", null, m.name), h("span", null, M2(m.price))),
+          qtyCtl(m)
+        )))) : null,
+        sections.length ? h("main", { class: "qm-main" }, sections) : h("div", { class: "qm-empty" }, q ? "Nothing matches “" + filter + "”." : "The menu is empty right now."),
+        h("footer", { class: "qm-foot" }, h("div", null, "Powered by ", h("b", null, "Hotel POS")), devCredit("dev-credit qm-credit")),
+        bar
+      );
+      drawBar();
+    }
+    function field2(label, input, hint) {
+      return h("label", { class: "qm-field" }, h("span", null, label), input, hint ? h("small", null, hint) : null);
+    }
+    function openCart() {
+      const box = h("div", { class: "qm-cart" });
+      const modal = openModal({ title: "Your order", content: box, actions: null });
+      modal.box.classList.add("qm-sheet");
+      const errSlot = h("div");
+      function draw() {
+        const ls = lines();
+        if (!ls.length) {
+          modal.close();
+          return;
+        }
+        const t = compute(subtotal(), 0, cfgFrom(data.settings));
+        const typeSeg = h("div", { class: "qm-seg" }, [["DINE_IN", "Dine-in"], ["TAKEAWAY", "Takeaway"]].map(([k, l]) => h("button", { type: "button", class: st.type === k ? "on" : "", onclick: () => {
+          st.type = k;
+          draw();
+        } }, l)));
+        const tableSel = h("select", { onchange: (e) => st.tableId = e.target.value }, h("option", { value: "" }, "Choose your table…"), data.tables.map((tb) => h("option", { value: tb.id }, tb.name)));
+        tableSel.value = data.tables.some((x) => x.id === st.tableId) ? st.tableId : "";
+        const name = h("input", { type: "text", maxlength: 40, autocomplete: "name", value: st.name, oninput: (e) => st.name = e.target.value });
+        const phone = h("input", { type: "tel", maxlength: 20, autocomplete: "tel", inputmode: "tel", placeholder: "03xx xxxxxxx", value: st.phone, oninput: (e) => st.phone = e.target.value });
+        const notes = h("textarea", { maxlength: 200, rows: 2, placeholder: "e.g. less spicy, no onions", oninput: (e) => st.notes = e.target.value }, st.notes);
+        const hp = h("input", { class: "qm-hp", tabindex: "-1", autocomplete: "off", "aria-hidden": "true", name: "website" });
+        const send = h("button", { class: "qm-send", type: "button" }, "Place order \xB7 " + M2(t.total));
+        send.onclick = async () => {
+          errSlot.replaceChildren();
+          const err = (m) => errSlot.replaceChildren(h("div", { class: "qm-err", role: "alert" }, m));
+          if (st.type === "DINE_IN" && !st.tableId) return err("Please choose your table.");
+          if (st.name.trim().length < 2) return err("Please write your name.");
+          if (st.phone.replace(/\D/g, "").length < 7) return err("Please write a valid phone number.");
+          const uid = "qm-" + newId("o").slice(2);
+          send.disabled = true;
+          send.textContent = "Sending…";
+          try {
+            const r = await pub("publicOrder", { uid, type: st.type, tableId: st.type === "DINE_IN" ? st.tableId : "", name: st.name.trim(), phone: st.phone.trim(), notes: st.notes.trim(), website: hp.value, items: ls.map((l) => ({ menuId: l.m.id, qty: l.qty })) });
+            const tb = data.tables.find((x) => x.id === st.tableId);
+            mem.last = { uid, at: Date.now(), total: t.total, count: count(), type: st.type, table: st.type === "DINE_IN" && tb ? tb.name : "", status: r.status };
+            mem.name = st.name.trim();
+            mem.phone = st.phone.trim();
+            mem.type = st.type;
+            mem.tableId = st.tableId;
+            cart = {};
+            mem.cart = cart;
+            st.notes = "";
+            saveMem();
+            modal.close();
+            showStatus();
+          } catch (e) {
+            err(errText(e));
+            send.disabled = false;
+            send.textContent = "Place order \xB7 " + M2(t.total);
+          }
+        };
+        box.replaceChildren(
+          h("div", { class: "qm-lines" }, ls.map((l) => h("div", { class: "qm-line" }, h("div", null, h("b", null, l.m.name), h("span", null, M2(l.m.price))), h("div", { class: "qm-step" }, h("button", { type: "button", onclick: () => {
+            setQty(l.m.id, l.qty - 1);
+            draw();
+          } }, "−"), h("span", null, l.qty), h("button", { type: "button", onclick: () => {
+            setQty(l.m.id, l.qty + 1);
+            draw();
+          } }, "+")), h("strong", null, M2(l.qty * l.m.price))))),
+          h(
+            "div",
+            { class: "qm-tot" },
+            t.service ? h("div", null, h("span", null, "Service charge"), h("span", null, M2(t.service))) : null,
+            t.tax ? h("div", null, h("span", null, data.settings.TAX_LABEL || "Tax"), h("span", null, M2(t.tax))) : null,
+            h("div", { class: "grand" }, h("span", null, "Total"), h("span", null, M2(t.total)))
+          ),
+          typeSeg,
+          st.type === "DINE_IN" ? field2("Table", tableSel) : null,
+          h("div", { class: "qm-two" }, field2("Your name", name), field2("Phone", phone)),
+          field2("Note for the kitchen (optional)", notes),
+          hp,
+          errSlot,
+          send,
+          h("p", { class: "qm-fine" }, "The restaurant will confirm your order. Payment at the counter.")
+        );
+      }
+      draw();
+    }
+    function showStatus() {
+      clearTimeout(statusTimer);
+      const o = mem.last;
+      if (!o) return drawMenu();
+      const icon2 = { PENDING: "⏳", ACCEPTED: "✓", REJECTED: "✕" }[o.status] || "⏳";
+      const title = { PENDING: "Order sent", ACCEPTED: "Order confirmed", REJECTED: "Order not accepted" }[o.status] || "Order sent";
+      const text = o.status === "ACCEPTED" ? "The kitchen has your order" + (o.table ? " for " + o.table : "") + ". Enjoy your meal!" : o.status === "REJECTED" ? "Sorry, the restaurant could not accept this order" + (o.reason ? ": " + o.reason : ".") + " Please ask a waiter." : "Waiting for the restaurant to confirm… This usually takes a minute.";
+      page.replaceChildren(h(
+        "div",
+        { class: "qm-status s-" + String(o.status || "PENDING").toLowerCase() },
+        h("div", { class: "qm-ring" }, h("span", null, icon2)),
+        h("h1", null, title),
+        h("p", null, text),
+        h("div", { class: "qm-receipt" }, h("div", null, h("span", null, "Items"), h("b", null, o.count)), h("div", null, h("span", null, o.type === "TAKEAWAY" ? "Takeaway" : "Table"), h("b", null, o.type === "TAKEAWAY" ? "✓" : o.table || "-")), h("div", null, h("span", null, "Total"), h("b", null, M2(o.total)))),
+        h("button", { class: "qm-send", type: "button", onclick: () => {
+          clearTimeout(statusTimer);
+          if (o.status !== "PENDING") delete mem.last;
+          saveMem();
+          drawMenu();
+          window.scrollTo(0, 0);
+        } }, o.status === "PENDING" ? "Back to menu" : "Order something else"),
+        h("footer", { class: "qm-foot" }, devCredit("dev-credit qm-credit"))
+      ));
+      window.scrollTo(0, 0);
+      if (o.status === "PENDING" && Date.now() - o.at < 2 * 3600 * 1e3) {
+        statusTimer = setTimeout(async () => {
+          if (!page.isConnected || !page.querySelector(".qm-status")) return;
+          try {
+            const r = await pub("publicOrderStatus", { uid: o.uid });
+            o.status = r.status;
+            o.reason = r.reason;
+            saveMem();
+          } catch (e) {
+          }
+          if (page.isConnected && page.querySelector(".qm-status")) showStatus();
+        }, 5e3);
+      }
+    }
+    async function boot() {
+      page.replaceChildren(h("div", { class: "qm-loading" }, h("div", { class: "qm-spin" }), h("p", null, "Opening the menu…")));
+      try {
+        data = await pub("publicMenu", {});
+        document.title = (data.hotel.name || link.name) + " \xB7 Menu";
+        Object.keys(cart).forEach((id) => {
+          const m = data.menu.find((x) => x.id === id);
+          if (!m || !m.available) delete cart[id];
+        });
+        if (mem.last && mem.last.status === "PENDING" && Date.now() - mem.last.at < 2 * 3600 * 1e3) showStatus();
+        else drawMenu();
+      } catch (e) {
+        const msg = e && e.code === "MENU_OFF" ? "This restaurant has not switched on its QR menu yet." : errText(e);
+        page.replaceChildren(h("div", { class: "qm-status s-rejected" }, h("div", { class: "qm-ring" }, h("span", null, "!")), h("h1", null, "Menu not available"), h("p", null, msg), h("button", { class: "qm-send", type: "button", onclick: boot }, "Try again")));
+      }
+    }
+    boot();
+  }
+
   // web/js/app.js
   var root = document.getElementById("app");
   var carried = null;
@@ -5175,6 +6028,10 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     root.dataset.view = name;
     window.scrollTo(0, 0);
     switch (name) {
+      case "menu":
+        root.dataset.view = "menu";
+        publicMenuView(root, sub);
+        break;
       case "register":
         mount(root, registerView(nav));
         break;
