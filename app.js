@@ -6260,6 +6260,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           )
         ),
         sticky,
+        activeOrder() ? h("button", { class: "qm-track", type: "button", onclick: showStatus }, h("span", { class: "qm-track-dot" }), h("span", null, "Your order: ", h("b", null, STAGE_LABEL[stageOf(mem.last)] || "In progress")), h("span", { class: "qm-track-go" }, "Track →")) : null,
         featured.length ? h("section", { class: "qm-feat" }, h("div", { class: "qm-feat-h" }, h("h2", null, "Chef’s picks"), h("span", null, "Most loved by our guests")), h("div", { class: "qm-feat-row" }, featured.map((m) => h(
           "div",
           { class: "qm-fcard", role: "button", tabindex: "0", onclick: () => openItem(m) },
@@ -6391,53 +6392,88 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       draw();
     }
+    /* Where the customer's order is now. PENDING / REJECTED come from the QR order, the rest from the real order. */
+    const FINAL = ["REJECTED", "PAID", "CANCELLED"];
+    function stageOf(o) {
+      if (!o) return "";
+      if (o.status === "PENDING" || o.status === "REJECTED") return o.status;
+      return o.stage || "CONFIRMED";
+    }
+    const activeOrder = () => mem.last && !FINAL.includes(stageOf(mem.last)) && Date.now() - mem.last.at < 6 * 3600 * 1e3 ? mem.last : null;
+    const STAGE_LABEL = { PENDING: "Waiting for confirmation", CONFIRMED: "Confirmed", IN_KITCHEN: "In the kitchen", PREPARING: "Being prepared", READY: "Ready", SERVED: "Served", BILLED: "Bill ready" };
     function showStatus() {
       clearTimeout(statusTimer);
       const o = mem.last;
       if (!o) return drawMenu();
-      const s2 = String(o.status || "PENDING");
-      const ok = s2 === "ACCEPTED", bad = s2 === "REJECTED";
-      const title = ok ? "Order confirmed" : bad ? "Order not accepted" : "Order sent";
-      const text = ok ? "The kitchen is preparing your order" + (o.table ? " for " + o.table : "") + ". Enjoy your meal!" : bad ? "Sorry, the restaurant could not accept this order" + (clean(o.reason) ? ": " + clean(o.reason) : ".") + " Please ask a waiter." : "Waiting for the restaurant to confirm. This usually takes a minute — you can keep this page open.";
-      const step = (label, state) => h("li", { class: state }, h("span", { class: "dot" }, state === "done" ? ic("check") : state === "bad" ? ic("x") : null), label);
+      const sg = stageOf(o);
+      const take = o.type === "TAKEAWAY";
+      const C = {
+        PENDING: ["Order sent", "Waiting for the restaurant to confirm. This usually takes a minute — you can keep this page open.", "clock", "pending"],
+        REJECTED: ["Order not accepted", "Sorry, the restaurant could not accept this order" + (clean(o.reason) ? ": " + clean(o.reason) : ".") + " Please ask a waiter.", "x", "rejected"],
+        CONFIRMED: ["Order confirmed", "The restaurant has your order" + (o.table ? " for " + o.table : "") + ".", "check", "accepted"],
+        IN_KITCHEN: ["In the kitchen", "Your order has reached the kitchen" + (o.table ? " for " + o.table : "") + ".", "clock", "progress"],
+        PREPARING: ["Being prepared", "The chef is preparing your food right now.", "clock", "progress"],
+        READY: ["Your order is ready", take ? "Please collect it from the counter." : "It will be served to " + (o.table || "your table") + " in a moment.", "check", "accepted"],
+        SERVED: ["Enjoy your meal", "Your food has been served. Ask for the bill whenever you are ready.", "check", "accepted"],
+        BILLED: ["Your bill is ready", "Please pay at the counter or ask a waiter. Thank you!", "check", "progress"],
+        PAID: ["Thank you!", "Payment received. Thank you for choosing us — we hope to see you again soon.", "check", "accepted"],
+        CANCELLED: ["Order cancelled", "This order was cancelled" + (clean(o.cancelReason) ? ": " + clean(o.cancelReason) : ".") + " Please ask a waiter.", "x", "rejected"]
+      }[sg] || ["Order confirmed", "The restaurant has your order.", "check", "accepted"];
+      const steps = ["Order sent", "Confirmed by restaurant", "Being prepared", "Ready to serve", "Paid \xB7 completed"];
+      const STATE = {
+        PENDING: "dn---", CONFIRMED: "dd---", IN_KITCHEN: "ddn--", PREPARING: "ddn--", READY: "dddn-", SERVED: "dddd-",
+        BILLED: "ddddn", PAID: "ddddd", REJECTED: "db---", CANCELLED: "ddb--"
+      }[sg] || "dd---";
+      const stepState = (i) => ({ d: "done", n: "now", b: "bad", "-": "" })[STATE[i]];
+      const step = (label, i) => {
+        const state = stepState(i);
+        return h("li", { class: state }, h("span", { class: "dot" }, state === "done" ? ic("check") : state === "bad" ? ic("x") : null), label);
+      };
       const hd = data ? data.hotel : { name: "", phone: "" };
+      const final = FINAL.includes(sg);
       put(page, h(
         "div",
-        { class: "qm-status s-" + s2.toLowerCase() },
-        h("div", { class: "qm-ring" }, ok ? ic("check") : bad ? ic("x") : ic("clock")),
-        h("h1", null, title),
-        h("p", null, text),
-        h("ol", { class: "qm-steps" }, step("Order sent", "done"), step(bad ? "Not accepted" : "Confirmed by restaurant", ok ? "done" : bad ? "bad" : "now"), step("Being prepared", ok ? "now" : "")),
+        { class: "qm-status s-" + C[3] },
+        h("div", { class: "qm-ring" }, ic(C[2])),
+        h("h1", null, C[0]),
+        h("p", null, C[1]),
+        h("ol", { class: "qm-steps" }, steps.map(step)),
         h(
           "div",
           { class: "qm-receipt" },
           h("div", { class: "qm-receipt-h" }, h("span", null, "Your order"), h("b", null, clean(o.ref))),
           (o.items || []).map((i) => h("div", { class: "qm-receipt-l" }, h("span", null, i.qty + " \xD7 " + clean(i.name)))),
-          h("div", { class: "qm-receipt-f" }, h("span", null, o.type === "TAKEAWAY" ? "Takeaway" : clean(o.table) || "Dine-in"), h("b", null, M2(o.total)))
+          h("div", { class: "qm-receipt-f" }, h("span", null, take ? "Takeaway" : clean(o.table) || "Dine-in"), h("b", null, M2(o.serverTotal || o.total)))
         ),
         h("button", { class: "qm-send", type: "button", onclick: () => {
           clearTimeout(statusTimer);
-          if (!s2.startsWith("PENDING")) delete mem.last;
+          if (final) delete mem.last;
           saveMem();
           drawMenu();
           window.scrollTo(0, 0);
-        } }, s2 === "PENDING" ? "Back to the menu" : "Order something else"),
+        } }, final ? "Order something else" : "Back to the menu"),
         hd.phone ? h("a", { class: "qm-link", href: "tel:" + hd.phone.replace(/[^0-9+]/g, "") }, ic("phone"), "Call " + (hd.name || "the restaurant")) : null,
         h("footer", { class: "qm-foot" }, h("div", { class: "qm-powered" }, "Powered by ", h("b", null, "Hotel POS")), devCredit("dev-credit qm-credit"))
       ));
       window.scrollTo(0, 0);
-      if (s2 === "PENDING" && Date.now() - o.at < 2 * 3600 * 1e3) {
+      if (!final && Date.now() - o.at < 6 * 3600 * 1e3) {
         statusTimer = setTimeout(async () => {
           if (!page.isConnected || !page.querySelector(".qm-status")) return;
-          try {
-            const r = await pub("publicOrderStatus", { uid: o.uid });
-            o.status = r.status;
-            o.reason = r.reason;
-            saveMem();
-          } catch (e) {
-          }
+          await refreshStatus(o);
           if (page.isConnected && page.querySelector(".qm-status")) showStatus();
-        }, 5e3);
+        }, sg === "PENDING" ? 5e3 : 8e3);
+      }
+    }
+    async function refreshStatus(o) {
+      try {
+        const r = await pub("publicOrderStatus", { uid: o.uid });
+        o.status = r.status;
+        o.reason = r.reason;
+        o.stage = r.stage || "";
+        o.cancelReason = r.cancelReason || "";
+        if (r.total) o.serverTotal = r.total;
+        saveMem();
+      } catch (e) {
       }
     }
     function skeleton() {
@@ -6456,8 +6492,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const m = data.menu.find((x) => x.id === id);
           if (!m || !m.available) delete cart[id];
         });
-        if (mem.last && mem.last.status === "PENDING" && Date.now() - mem.last.at < 2 * 3600 * 1e3) showStatus();
-        else drawMenu();
+        if (activeOrder()) {
+          await refreshStatus(mem.last);
+          showStatus();
+        } else drawMenu();
       } catch (e) {
         const msg = e && e.code === "MENU_OFF" ? "This restaurant has not switched on its QR menu yet." : errText(e);
         put(page, h("div", { class: "qm-status s-rejected" }, h("div", { class: "qm-ring" }, ic("x")), h("h1", null, "Menu not available"), h("p", null, msg), h("button", { class: "qm-send", type: "button", onclick: boot }, "Try again")));
