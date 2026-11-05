@@ -770,6 +770,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const op = q[0];
         try {
           const r = await raw(op.action, op.data, { opId: op.opId });
+          if (op.data && op.data.orderId) touchedAt.set(op.data.orderId, Date.now());
           liveSaved(op.action, op.data);
           merge(op.action, r);
         } catch (err) {
@@ -1075,7 +1076,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     rememberDoc(o, null);
     return { order: o, bill: null };
   }
+  /* Orders with a change still on its way to the sheet. A refresh that started before that change was saved
+     carries the OLD state of these orders, so it must not overwrite what you see on this device. */
+  var busyOrders = /* @__PURE__ */ new Map(), touchedAt = /* @__PURE__ */ new Map();
+  function orderBusy(id, since) {
+    if (!id) return false;
+    if ((busyOrders.get(id) || 0) > 0 || (touchedAt.get(id) || 0) >= since) return true;
+    return readQ().some((op) => op.data && op.data.orderId === id);
+  }
+  function shield(r, since) {
+    if (!r || !Array.isArray(r.orders)) return;
+    const old = Date.now() - 12e4;
+    touchedAt.forEach((v, k) => {
+      if (v < old) touchedAt.delete(k);
+    });
+    const local = (id) => S.orders.find((x) => x.id === id);
+    r.orders = r.orders.map((o) => orderBusy(o.id, since) ? local(o.id) || null : o).filter(Boolean);
+    S.orders.forEach((o) => {
+      if (!o.tmp && orderBusy(o.id, since) && !r.orders.some((x) => x.id === o.id)) r.orders.push(o);
+    });
+    if (Array.isArray(r.tables)) r.tables = r.tables.map((tb) => {
+      const loc = S.tables.find((x) => x.id === tb.id);
+      if (!loc) return tb;
+      return [tb.currentOrderId, loc.currentOrderId].some((id) => orderBusy(id, since)) ? Object.assign({}, tb, { status: loc.status, currentOrderId: loc.currentOrderId }) : tb;
+    });
+  }
   function save(action, data = {}, opts = {}) {
+    const busyId = data && data.orderId;
+    if (busyId) busyOrders.set(busyId, (busyOrders.get(busyId) || 0) + 1);
     S.pending++;
     setSync("saving");
     try {
@@ -1096,6 +1124,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
     } else p = run();
     return p.finally(() => {
+      if (busyId) {
+        const n = (busyOrders.get(busyId) || 1) - 1;
+        if (n > 0) busyOrders.set(busyId, n);
+        else busyOrders.delete(busyId);
+        touchedAt.set(busyId, Date.now());
+      }
       S.pending--;
       if (S.pending === 0 && S.sync === "saving") setSync("saved");
     });
@@ -1351,7 +1385,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     polling = true;
     try {
       const bo = JSON.stringify(S.orders), bt = JSON.stringify(S.tables);
+      const startedAt = Date.now();
       const r = await raw("poll", { rev: S.rev });
+      shield(r, startedAt);
       apply(r, false);
       const keys = ["tick"];
       if (JSON.stringify(S.orders) !== bo) keys.push("orders");
