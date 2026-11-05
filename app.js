@@ -20,6 +20,134 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       __defProp(target, name, { get: all[name], enumerable: true });
   };
 
+  // web/js/local-db.js
+  // Device storage (IndexedDB). Everything the hotel works with is kept on this PC/laptop:
+  // menu, tables, open orders, reports already opened, and changes still waiting to be sent.
+  // The app reads from here instantly and the Google Sheet is updated in the background.
+  // An in-memory mirror keeps reads synchronous; every write goes to IndexedDB straight away.
+  var LDB = (() => {
+    const DB_NAME = "hotelpos-local", OS = "kv";
+    const mem = /* @__PURE__ */ new Map();
+    let db = null;
+    const pending = /* @__PURE__ */ new Map();
+    let flushT = null;
+    function openDb() {
+      return new Promise((resolve) => {
+        try {
+          if (!window.indexedDB) return resolve(null);
+          const req = indexedDB.open(DB_NAME, 1);
+          req.onupgradeneeded = () => {
+            if (!req.result.objectStoreNames.contains(OS)) req.result.createObjectStore(OS);
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => resolve(null);
+          req.onblocked = () => resolve(null);
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    }
+    function loadAll() {
+      return new Promise((resolve) => {
+        if (!db) return resolve();
+        try {
+          const tx = db.transaction(OS, "readonly");
+          const st = tx.objectStore(OS);
+          const req = st.openCursor();
+          req.onsuccess = () => {
+            const c = req.result;
+            if (c) {
+              mem.set(String(c.key), c.value);
+              c.continue();
+            } else resolve();
+          };
+          req.onerror = () => resolve();
+        } catch (e) {
+          resolve();
+        }
+      });
+    }
+    function writeNow() {
+      flushT = null;
+      if (!db || !pending.size) return;
+      const items = Array.from(pending.entries());
+      pending.clear();
+      try {
+        const tx = db.transaction(OS, "readwrite");
+        const st = tx.objectStore(OS);
+        items.forEach(([k, v]) => v === void 0 ? st.delete(k) : st.put(v, k));
+      } catch (e) {
+        console.warn("Local save failed", e);
+      }
+    }
+    function schedule(k, v, now) {
+      pending.set(k, v);
+      if (now) {
+        clearTimeout(flushT);
+        writeNow();
+      } else if (!flushT) flushT = setTimeout(writeNow, 300);
+    }
+    const ready = (async () => {
+      db = await openDb();
+      await loadAll();
+      // One-time move of older data that this app kept in localStorage.
+      ["hotelpos.boot", "hotelpos.queue"].forEach((k) => {
+        try {
+          const raw2 = localStorage.getItem(k);
+          if (raw2 && !mem.has(k)) {
+            const v = JSON.parse(raw2);
+            mem.set(k, v);
+            schedule(k, v, true);
+          }
+          if (raw2 && db) localStorage.removeItem(k);
+        } catch (e) {
+        }
+      });
+      // Ask the browser not to clear this hotel's data when the disk gets full.
+      try {
+        if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {
+        });
+      } catch (e) {
+      }
+    })();
+    window.addEventListener("pagehide", writeNow);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) writeNow();
+    });
+    return {
+      ready,
+      available: () => !!db,
+      get(k, def) {
+        return mem.has(k) ? mem.get(k) : def;
+      },
+      /* now=true writes to disk immediately (used for unsent changes). */
+      set(k, v, now) {
+        mem.set(k, v);
+        if (db) schedule(k, v, now);
+        else try {
+          localStorage.setItem(k, JSON.stringify(v));
+        } catch (e) {
+        }
+      },
+      del(k) {
+        mem.delete(k);
+        if (db) schedule(k, void 0, true);
+        else try {
+          localStorage.removeItem(k);
+        } catch (e) {
+        }
+      },
+      keys: () => Array.from(mem.keys()),
+      fallbackGet(k) {
+        try {
+          return JSON.parse(localStorage.getItem(k) || "null");
+        } catch (e) {
+          return null;
+        }
+      }
+    };
+  })();
+
   // web/js/store.js
   var store_exports = {};
   __export(store_exports, {
@@ -89,19 +217,26 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
           } catch (e) {
           }
         },
-        /* Last known hotel data: lets the app paint instantly on reload while fresh data loads. */
+        /* Sign-out: remove this hotel's copy from the device. (The Google Sheet keeps everything.) */
+        clearLocal() {
+          LDB.del(CACHE_KEY);
+          LDB.keys().filter((k) => k.indexOf("hotelpos.memo:") === 0).forEach((k) => LDB.del(k));
+        },
+        /* Last known hotel data, kept on this device (IndexedDB): the app paints from it instantly
+           on every open while fresh data loads from the Google Sheet in the background. */
         getBoot() {
-          try {
-            return JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
-          } catch (e) {
-            return null;
-          }
+          const v = LDB.get(CACHE_KEY);
+          return v !== void 0 ? v : LDB.available() ? null : LDB.fallbackGet(CACHE_KEY);
         },
         setBoot(b) {
-          try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify(b));
-          } catch (e) {
-          }
+          LDB.set(CACHE_KEY, b);
+        },
+        /* Lists already opened (orders, customers, reports, dashboard) per signed-in user. */
+        getMemo(key) {
+          return key ? LDB.get("hotelpos.memo:" + key, null) : null;
+        },
+        setMemo(key, m) {
+          if (key) LDB.set("hotelpos.memo:" + key, m);
         },
         getAdmin() {
           return read(sessionStorage, ADMIN_KEY);
@@ -200,14 +335,21 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       }
     };
   }
+  var busyKids = /* @__PURE__ */ new WeakMap();
   function setBusy(btn, busy, busyLabel) {
     if (busy) {
       btn.dataset.label = btn.textContent;
+      if (!busyKids.has(btn)) busyKids.set(btn, Array.from(btn.childNodes));
       btn.disabled = true;
+      btn.classList.add("is-busy");
       if (busyLabel) btn.textContent = busyLabel;
     } else {
       btn.disabled = false;
-      if (btn.dataset.label) btn.textContent = btn.dataset.label;
+      btn.classList.remove("is-busy");
+      const kids = busyKids.get(btn);
+      busyKids.delete(btn);
+      if (kids) btn.replaceChildren(...kids);
+      else if (btn.dataset.label) btn.textContent = btn.dataset.label;
     }
   }
   function formError(msg) {
@@ -598,17 +740,17 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     }, 1800);
   }
   function readQ() {
-    try {
-      return JSON.parse(localStorage.getItem(QKEY) || "[]");
-    } catch (e) {
-      return [];
+    const q = LDB.get(QKEY);
+    if (Array.isArray(q)) return q.slice();
+    if (!LDB.available()) {
+      const f = LDB.fallbackGet(QKEY);
+      if (Array.isArray(f)) return f;
     }
+    return [];
   }
   function writeQ(q) {
-    try {
-      localStorage.setItem(QKEY, JSON.stringify(q));
-    } catch (e) {
-    }
+    if (q.length) LDB.set(QKEY, q, true);
+    else LDB.del(QKEY);
     S.queued = q.length;
     emit("sync");
   }
@@ -717,7 +859,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     try {
       const r = await raw(action, data, { opId, timeout: opts.timeout });
       merge(action, r);
-      Object.keys(memo).forEach((k) => delete memo[k]);
+      memoFresh.clear();
       return r;
     } catch (err) {
       if (err instanceof ApiError && NETERR.includes(err.code) && QUEUEABLE.includes(action) && opts.queue !== false) {
@@ -732,6 +874,22 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     }
   }
   var memo = {};
+  var memoFresh = /* @__PURE__ */ new Set();
+  var memoT = null;
+  function saveMemo() {
+    clearTimeout(memoT);
+    memoT = setTimeout(() => {
+      if (!session || !session.key) return;
+      const keys = Object.keys(memo).slice(-60);
+      const out = {};
+      keys.forEach((k) => out[k] = memo[k]);
+      store.setMemo(session.key, out);
+    }, 1200);
+  }
+  function loadMemo(key) {
+    const m = store.getMemo(key);
+    if (m && typeof m === "object") Object.keys(m).forEach((k) => memo[k] = m[k]);
+  }
   var today = () => {
     const d = /* @__PURE__ */ new Date(), p = (n) => String(n).padStart(2, "0");
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
@@ -742,6 +900,8 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     if (memo[key] !== void 0) onData(memo[key], true);
     return read2(action, data).then((r) => {
       memo[key] = r;
+      memoFresh.add(key);
+      saveMemo();
       onData(r, false);
       return r;
     }).catch((e) => {
@@ -762,10 +922,12 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     ];
     for (const [allowed2, action, data] of jobs) {
       const key = mk(action, data);
-      if (!allowed2 || !session || memo[key] !== void 0) continue;
+      if (!allowed2 || !session || memoFresh.has(key)) continue;
       await new Promise((r) => setTimeout(r, 400));
       try {
         memo[key] = await read2(action, data);
+        memoFresh.add(key);
+        saveMemo();
       } catch (e) {
       }
     }
@@ -848,6 +1010,8 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     S.ready = false;
     S.offline = false;
     Object.keys(memo).forEach((k) => delete memo[k]);
+    memoFresh.clear();
+    loadMemo(sess.key);
     S.queued = readQ().length;
     let painted = false;
     if (firstBoot) {
@@ -872,6 +1036,10 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     else await fresh;
     loop();
     setTimeout(prefetch, 800);
+    clearInterval(retryTimer);
+    retryTimer = setInterval(() => {
+      if (S.queued && !flushing) flush();
+    }, 2e4);
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("online", onOnline);
     flush();
@@ -932,8 +1100,10 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     if (polling) again = true;
     else setTimeout(poll, 150);
   }
+  var retryTimer = null;
   function stop() {
     clearTimeout(pollTimer);
+    clearInterval(retryTimer);
     pollTimer = null;
     session = null;
     document.removeEventListener("visibilitychange", onVis);
@@ -950,6 +1120,9 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     S.menu = [];
     S.categories = [];
     Object.keys(memo).forEach((k) => delete memo[k]);
+    memoFresh.clear();
+    LDB.del(QKEY);
+    store.clearLocal();
     try {
       localStorage.removeItem(QKEY);
     } catch (e) {
@@ -3759,30 +3932,125 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
   }
 
   // web/js/auth.js
-  function shell(content, { showAdminLink = true, nav: nav2 } = {}) {
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function svgEl(markup, cls) {
+    const t = document.createElement("template");
+    t.innerHTML = markup.trim();
+    const el = t.content.firstChild;
+    if (cls) el.setAttribute("class", cls);
+    return el;
+  }
+  var ICONS = {
+    crest: '<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="gc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3d58e"/><stop offset=".55" stop-color="#d4a24c"/><stop offset="1" stop-color="#9c6b1f"/></linearGradient></defs><circle cx="32" cy="32" r="30" fill="none" stroke="url(#gc)" stroke-width="1.6"/><circle cx="32" cy="32" r="25.5" fill="none" stroke="url(#gc)" stroke-width=".7" opacity=".7"/><path d="M17 40.5h30" stroke="url(#gc)" stroke-width="2.2" stroke-linecap="round"/><path d="M19.5 38.5a12.5 12.5 0 0 1 25 0z" fill="url(#gc)"/><circle cx="32" cy="23.6" r="2.1" fill="url(#gc)"/><path d="M25 45.5h14" stroke="url(#gc)" stroke-width="1.4" stroke-linecap="round" opacity=".8"/></svg>',
+    tables: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="5" rx="1.5"/><path d="M7 10v9M17 10v9M4 15h4M16 15h4"/></svg>',
+    kitchen: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16a8 8 0 0 1 16 0z"/><path d="M3 19h18M12 6.5V8"/></svg>',
+    bill: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
+    staff: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.6M18 19a5 5 0 0 0-2.6-4.4"/></svg>',
+    chart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+    bolt: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v6c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>',
+    cloud: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/></svg>',
+    owner: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M5 20V9l7-5 7 5v11M10 20v-5h4v5"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    eyeOff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
+    arrow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+  };
+  var icon = (name, cls) => svgEl(ICONS[name], cls || "ic");
+  var DEV_NAME = "DevLinks", DEV_URL = "https://devlinks.online", DEV_HOST = "devlinks.online";
+  function devCredit(cls) {
     return h(
       "div",
-      { class: "auth" },
+      { class: cls || "dev-credit" },
+      h("span", null, "Developed by "),
+      h("a", { href: DEV_URL, target: "_blank", rel: "noopener" }, h("strong", null, DEV_NAME)),
+      h("span", { class: "sep", "aria-hidden": "true" }, "\u2022"),
+      h("a", { href: DEV_URL, target: "_blank", rel: "noopener" }, DEV_HOST)
+    );
+  }
+  /* Adds a show/hide eye button to a password field. */
+  function revealable(f) {
+    const btn = h("button", { class: "pw-eye", type: "button", "aria-label": "Show password", title: "Show password" }, icon("eye"));
+    const wrap = h("div", { class: "pw-wrap" });
+    f.input.replaceWith(wrap);
+    wrap.append(f.input, btn);
+    btn.onclick = () => {
+      const show = f.input.type === "password";
+      f.input.type = show ? "text" : "password";
+      btn.replaceChildren(icon(show ? "eyeOff" : "eye"));
+      btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+      btn.title = show ? "Hide password" : "Show password";
+      f.input.focus();
+    };
+    return f;
+  }
+  function shell(content, { showAdminLink = true, nav: nav2, eyebrow, admin = false } = {}) {
+    const features = admin ? [
+      ["shield", "Hotel accounts", "Activate, suspend and renew subscriptions."],
+      ["chart", "One console", "Every registered hotel in one place."]
+    ] : [
+      ["tables", "Tables & orders", "Dine-in, takeaway and live table status."],
+      ["kitchen", "Kitchen display", "Tickets reach the kitchen with a sound alert."],
+      ["bill", "Billing & receipts", "Direct bill, split payment and instant print."],
+      ["staff", "Staff & roles", "Waiter, cashier and kitchen logins."],
+      ["chart", "Reports", "Sales, expenses and profit at a glance."]
+    ];
+    const deco = svgEl('<svg viewBox="0 0 600 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g fill="none" stroke="#d4a24c" stroke-width="1">' + Array.from({ length: 13 }, (_, i) => '<circle cx="600" cy="600" r="' + (60 + i * 46) + '"/>').join("") + '</g><g stroke="#d4a24c" stroke-width=".6">' + Array.from({ length: 12 }, (_, i) => {
+      const a = Math.PI + i / 11 * (Math.PI / 2);
+      return '<line x1="600" y1="600" x2="' + (600 + Math.cos(a) * 760).toFixed(1) + '" y2="' + (600 + Math.sin(a) * 760).toFixed(1) + '"/>';
+    }).join("") + "</g></svg>", "auth-deco");
+    return h(
+      "div",
+      { class: "auth auth-lux" },
       h(
         "aside",
         { class: "auth-brand" },
+        deco,
         h(
           "div",
-          null,
-          h("div", { class: "brand-mark" }, "Hotel POS"),
+          { class: "lux-top" },
           h(
-            "p",
-            { class: "brand-line", style: "margin-top:28px" },
-            "Orders, tables, billing and staff for hotels and restaurants. Every hotel keeps its records in its own private Google Sheet."
+            "div",
+            { class: "lux-logo" },
+            icon("crest", "lux-crest"),
+            h("div", null, h("div", { class: "brand-mark" }, "Hotel POS"), h("div", { class: "lux-sub" }, admin ? "Provider Console" : "Hospitality Suite"))
+          )
+        ),
+        h(
+          "div",
+          { class: "lux-mid" },
+          h(
+            "h2",
+            { class: "lux-head" },
+            admin ? ["Every hotel, ", h("em", null, "one"), " console."] : ["Run your restaurant with ", h("em", null, "five-star"), " ease."]
+          ),
+          h("p", { class: "brand-line" }, admin ? "Manage registered hotels, subscriptions and access from a single, secure place." : "Orders, tables, kitchen, billing and staff for hotels and restaurants \u2014 fast on every device, even when the internet drops."),
+          h("ul", { class: "lux-feats" }, features.map(([ic, t, d]) => h("li", null, h("span", { class: "lux-ic" }, icon(ic)), h("div", null, h("b", null, t), h("span", null, d))))),
+          admin ? null : h(
+            "div",
+            { class: "lux-badges" },
+            h("span", null, icon("bolt"), "Instant"),
+            h("span", null, icon("shield"), "Saved on this device"),
+            h("span", null, icon("cloud"), "Backed up to Google Sheet")
           )
         ),
         h(
           "div",
           { class: "auth-foot" },
-          showAdminLink ? h("button", { class: "link-button", type: "button", onclick: () => nav2("admin") }, "Administrator sign-in") : null
+          devCredit(),
+          admin ? h("button", { class: "link-button", type: "button", onclick: () => nav2("login") }, "Hotel owner sign-in") : showAdminLink ? h("button", { class: "link-button", type: "button", onclick: () => nav2("admin") }, "Administrator sign-in") : null
         )
       ),
-      h("main", { class: "auth-main" }, h("div", { class: "auth-form" }, content))
+      h(
+        "main",
+        { class: "auth-main" },
+        h(
+          "div",
+          { class: "auth-card" },
+          eyebrow ? h("div", { class: "lux-eyebrow" }, eyebrow) : null,
+          h("div", { class: "auth-form" }, content)
+        ),
+        h("div", { class: "auth-legal" }, h("span", null, "\xA9 " + (/* @__PURE__ */ new Date()).getFullYear() + " Hotel POS"), devCredit("dev-credit dark"))
+      )
     );
   }
   function showError(err, fields, slot) {
@@ -3816,13 +4084,15 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       }),
       confirmPassword: field({ label: "Confirm password", name: "confirmPassword", type: "password", autocomplete: "new-password", maxlength: 128 })
     };
+    revealable(f.password);
+    revealable(f.confirmPassword);
     const honeypot = h(
       "div",
       { class: "hp", "aria-hidden": "true" },
       h("label", null, "Website", h("input", { name: "website", tabindex: "-1", autocomplete: "off" }))
     );
     const slot = h("div");
-    const submit = h("button", { class: "btn btn-primary btn-block", type: "submit" }, "Register hotel");
+    const submit = h("button", { class: "btn btn-primary btn-block btn-lg btn-lux", type: "submit" }, "Register hotel");
     const form = h(
       "form",
       { novalidate: true, onsubmit: async (e) => {
@@ -3888,7 +4158,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       ),
       form,
       h("p", { class: "auth-alt" }, "Already registered? ", h("button", { class: "link-button", type: "button", onclick: () => nav2("login") }, "Sign in"))
-    ], { nav: nav2 });
+    ], { nav: nav2, eyebrow: "New hotel" });
   }
   function registeredView(result, nav2) {
     const tag = h(
@@ -3920,8 +4190,8 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       ),
       tag,
       h("p", { class: "lead" }, "After the administrator activates your account, you create your own Google Sheet and connect it from your portal. Your orders, staff and menu are saved in that sheet."),
-      h("div", null, h("button", { class: "btn btn-primary", type: "button", onclick: () => nav2("login") }, "Go to sign in"))
-    ], { nav: nav2 });
+      h("div", null, h("button", { class: "btn btn-primary btn-lux", type: "button", onclick: () => nav2("login") }, "Go to sign in"))
+    ], { nav: nav2, eyebrow: "Registration complete" });
   }
   var CODE_KEY = "hotelpos.staffcode";
   var remembered = () => {
@@ -3956,15 +4226,16 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
     let who = mode === "staff" || !mode && remembered().code && !store.getLastUsername() ? "staff" : "owner";
     const slot = h("div");
     const box = h("div");
-    const tabsEl = h("div", { class: "seg wide" });
+    const tabsEl = h("div", { class: "seg wide lux-tabs", role: "group", "aria-label": "Sign in as" });
     function ownerForm() {
       const f = {
         username: field({ label: "Username", name: "username", autocomplete: "username", value: store.getLastUsername(), maxlength: 40 }),
         password: field({ label: "Password", name: "password", type: "password", autocomplete: "current-password", maxlength: 128 })
       };
+      revealable(f.password);
       const remember = h("input", { type: "checkbox", id: "remember" });
       remember.checked = true;
-      const submit = h("button", { class: "btn btn-primary btn-block btn-lg", type: "submit" }, "Sign in");
+      const submit = h("button", { class: "btn btn-primary btn-block btn-lg btn-lux", type: "submit" }, h("span", null, "Sign in"), icon("arrow"));
       return h("form", { novalidate: true, onsubmit: async (e) => {
         e.preventDefault();
         Object.values(f).forEach((x) => x.clear());
@@ -4013,7 +4284,8 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
         username: field({ label: "Username", name: "username", autocomplete: "username", value: mem.user || "", maxlength: 40 }),
         password: field({ label: "Password", name: "password", type: "password", autocomplete: "current-password", maxlength: 128 })
       };
-      const submit = h("button", { class: "btn btn-primary btn-block btn-lg", type: "submit" }, "Sign in");
+      revealable(f.password);
+      const submit = h("button", { class: "btn btn-primary btn-block btn-lg btn-lux", type: "submit" }, h("span", null, "Sign in"), icon("arrow"));
       return h("form", { novalidate: true, onsubmit: async (e) => {
         e.preventDefault();
         Object.values(f).forEach((x) => x.clear());
@@ -4053,22 +4325,22 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
       } }, f.hotelCode.el, f.username.el, f.password.el, submit);
     }
     function draw() {
-      tabsEl.replaceChildren(...[["owner", "Hotel owner"], ["staff", "Staff"]].map(([k, l]) => h("button", { class: k === who ? "on" : "", type: "button", onclick: () => {
+      tabsEl.replaceChildren(...[["owner", "Hotel owner", "owner"], ["staff", "Staff", "staff"]].map(([k, l, ic]) => h("button", { class: k === who ? "on" : "", type: "button", "aria-pressed": k === who ? "true" : "false", onclick: () => {
         who = k;
         slot.replaceChildren();
         draw();
-      } }, l)));
+      } }, icon(ic), l)));
       box.replaceChildren(who === "owner" ? ownerForm() : staffForm());
     }
     draw();
     return shell([
-      h("div", null, h("h1", null, "Sign in"), h("p", { class: "lead" }, "Owners sign in with their username. Staff use the Hotel Code from their manager.")),
+      h("div", null, h("h1", null, "Sign in to your hotel"), h("p", { class: "lead" }, "Owners sign in with their username. Staff use the Hotel Code from their manager.")),
       notice ? h("div", { class: "notice", role: "status" }, notice) : null,
       tabsEl,
       box,
       slot,
       h("p", { class: "auth-alt" }, "New hotel? ", h("button", { class: "link-button", type: "button", onclick: () => nav2("register") }, "Register your hotel"))
-    ], { nav: nav2 });
+    ], { nav: nav2, eyebrow: "Welcome back" });
   }
   function blockedView(err, nav2) {
     const d = err.details || {};
@@ -4098,7 +4370,7 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
         store.clearOwner();
         nav2("login");
       } }, "Back to sign in"))
-    ], { nav: nav2 });
+    ], { nav: nav2, eyebrow: "Account" });
   }
 
   // web/js/portal.js
@@ -4568,27 +4840,10 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
         setBusy(submit, false);
       }
     } }, f.username.el, f.password.el, slot, submit);
-    mount(root2, h(
-      "div",
-      { class: "auth" },
-      h(
-        "aside",
-        { class: "auth-brand" },
-        h(
-          "div",
-          null,
-          h("div", { class: "brand-mark" }, "Hotel POS"),
-          h("p", { class: "brand-line", style: "margin-top:28px" }, "Provider console. Manage registered hotels, subscriptions and access.")
-        ),
-        h("div", { class: "auth-foot" }, h("button", { class: "link-button", type: "button", onclick: () => nav2("login") }, "Hotel owner sign-in"))
-      ),
-      h("main", { class: "auth-main" }, h(
-        "div",
-        { class: "auth-form" },
-        h("div", null, h("h1", null, "Administrator sign-in")),
-        form
-      ))
-    ));
+    mount(root2, shell([
+      h("div", null, h("h1", null, "Administrator sign-in"), h("p", { class: "lead" }, "For the software provider only.")),
+      form
+    ], { nav: nav2, admin: true, eyebrow: "Provider" }));
   }
   var pad = (n) => (n < 10 ? "0" : "") + n;
   var fmtUTC = (d) => pad(d.getUTCDate()) + "/" + pad(d.getUTCMonth() + 1) + "/" + d.getUTCFullYear();
@@ -4956,5 +5211,14 @@ window.HOTEL_POS_API_URL = 'https://script.google.com/macros/s/AKfycbzdGYG9ozH7S
   window.addEventListener("offline", syncBar);
   document.body.prepend(bar);
   window.addEventListener("hashchange", render14);
-  render14();
+  // Keeps the website files on this device so it still opens without internet (see sw.js).
+  try {
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {
+      }));
+    }
+  } catch (e) {
+  }
+  LDB.ready.catch(() => {
+  }).then(render14);
 })();
