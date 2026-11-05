@@ -3986,6 +3986,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function card(q) {
       const accept = h("button", { class: "btn btn-primary", type: "button" }, "✓ Accept & send to kitchen");
       const reject = h("button", { class: "btn btn-danger", type: "button" }, "Reject");
+      const canBill = canAny(["GENERATE_BILLS", "PROCESS_PAYMENT"]);
+      const direct = canBill ? h("button", { class: "btn btn-ok", type: "button", title: "Make the order without sending it to the kitchen and open Bill & pay" }, "\u{1F4B5} Direct bill") : null;
+      if (direct) direct.addEventListener("click", () => act(direct, async () => {
+        const r = await save("acceptQrOrder", { qrId: q.id, send: false }, { queue: false });
+        qrHandled(q.id, true);
+        if (r && r.order) openBill(r.order.id, { ctx });
+      }, { busy: "Opening bill\u2026" }));
       accept.onclick = () => {
         qrHandled(q.id, true);
         save("acceptQrOrder", { qrId: q.id, send: can("SEND_TO_KITCHEN") }, { queue: false }).then((r) => {
@@ -4017,7 +4024,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         h("div", { class: "qr-items" }, (q.items || []).map((l) => h("div", { class: "trow" }, h("span", null, h("b", null, l.qty + "\xD7 "), l.name, l.notes ? h("small", null, " \xB7 " + l.notes) : null), h("span", null, M2(l.qty * l.price))))),
         q.notes ? h("div", { class: "qr-note" }, "\u{1F4DD} ", q.notes) : null,
         h("div", { class: "trow grand" }, h("span", null, "Items total"), h("span", null, M2(q.subtotal))),
-        h("footer", null, reject, accept)
+        h("footer", { class: direct ? "three" : "" }, reject, direct, accept)
       );
     }
     function draw() {
