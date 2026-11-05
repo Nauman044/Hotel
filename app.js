@@ -1678,45 +1678,192 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function qrSvg(text, cell) {
     return svgEl(qrSvgMarkup(text, cell));
   }
-  function downloadQr(url, name) {
-    const m = qrMatrix(url), n = m.length, pad = 4, cell = 24, size = (n + pad * 2) * cell;
+  /* Designed QR card (navy + gold, hotel style). Used for "Download QR" and the printed table cards. */
+  async function qrPosterCanvas(url, name, opts = {}) {
+    const W = 1200, H = 1600;
     const cv = document.createElement("canvas");
-    cv.width = cv.height = size;
+    cv.width = W;
+    cv.height = H;
     const g = cv.getContext("2d");
-    g.fillStyle = "#fff";
-    g.fillRect(0, 0, size, size);
+    try {
+      await Promise.all(['600 80px "Cormorant Garamond"', 'italic 600 40px "Cormorant Garamond"', '800 30px "Manrope"', '600 26px "Manrope"'].map((f) => document.fonts.load(f)));
+    } catch (e) {
+    }
+    const serif = '"Cormorant Garamond", Georgia, "Times New Roman", serif', sans = '"Manrope", "Segoe UI", Arial, sans-serif';
+    const GOLD = "#d4a24c", GOLD_HI = "#f3d58e";
+    const rr = (x, y, w, h2, r) => {
+      g.beginPath();
+      g.moveTo(x + r, y);
+      g.arcTo(x + w, y, x + w, y + h2, r);
+      g.arcTo(x + w, y + h2, x, y + h2, r);
+      g.arcTo(x, y + h2, x, y, r);
+      g.arcTo(x, y, x + w, y, r);
+      g.closePath();
+    };
+    const spaced = (text, cx, y, gap) => {
+      const chars = Array.from(text), widths = chars.map((c) => g.measureText(c).width);
+      let x = cx - (widths.reduce((a, b) => a + b, 0) + gap * (chars.length - 1)) / 2;
+      g.textAlign = "left";
+      chars.forEach((c, i) => {
+        g.fillText(c, x, y);
+        x += widths[i] + gap;
+      });
+      g.textAlign = "center";
+    };
+    const fit = (text, weight, max, start, family) => {
+      let s2 = start;
+      do {
+        g.font = weight + " " + s2 + "px " + family;
+        s2 -= 2;
+      } while (g.measureText(text).width > max && s2 > 30);
+    };
+    // background
+    const bg = g.createLinearGradient(0, 0, W * 0.35, H);
+    bg.addColorStop(0, "#1b2847");
+    bg.addColorStop(0.55, "#0f182b");
+    bg.addColorStop(1, "#0a101d");
+    g.fillStyle = bg;
+    g.fillRect(0, 0, W, H);
+    const glow = g.createRadialGradient(W * 0.95, H * 0.02, 0, W * 0.95, H * 0.02, W * 0.8);
+    glow.addColorStop(0, "rgba(212,162,76,.40)");
+    glow.addColorStop(1, "rgba(212,162,76,0)");
+    g.fillStyle = glow;
+    g.fillRect(0, 0, W, H);
+    const glow2 = g.createRadialGradient(0, H, 0, 0, H, W * 0.75);
+    glow2.addColorStop(0, "rgba(90,125,190,.22)");
+    glow2.addColorStop(1, "rgba(90,125,190,0)");
+    g.fillStyle = glow2;
+    g.fillRect(0, 0, W, H);
+    // art-deco arcs
+    g.save();
+    g.strokeStyle = "rgba(212,162,76,.10)";
+    g.lineWidth = 2;
+    for (let i = 0; i < 16; i++) {
+      g.beginPath();
+      g.arc(W + 40, H + 40, 120 + i * 70, Math.PI, Math.PI * 1.5);
+      g.stroke();
+    }
+    g.restore();
+    // double gold frame
+    g.strokeStyle = "rgba(212,162,76,.85)";
+    g.lineWidth = 4;
+    rr(44, 44, W - 88, H - 88, 46);
+    g.stroke();
+    g.strokeStyle = "rgba(212,162,76,.35)";
+    g.lineWidth = 2;
+    rr(62, 62, W - 124, H - 124, 34);
+    g.stroke();
+    g.textAlign = "center";
+    g.textBaseline = "alphabetic";
+    // crest
+    try {
+      const img = new Image();
+      img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(ICONS.crest.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" '));
+      await img.decode();
+      g.drawImage(img, W / 2 - 54, 118, 108, 108);
+    } catch (e) {
+    }
+    // hotel name
+    g.fillStyle = "#ffffff";
+    fit(name || "Our Menu", "600", W - 260, 104, serif);
+    g.fillText(name || "Our Menu", W / 2, 318);
+    // divider
+    const dv = g.createLinearGradient(W / 2 - 170, 0, W / 2 + 170, 0);
+    dv.addColorStop(0, "rgba(212,162,76,0)");
+    dv.addColorStop(0.5, GOLD_HI);
+    dv.addColorStop(1, "rgba(212,162,76,0)");
+    g.fillStyle = dv;
+    g.fillRect(W / 2 - 170, 352, 340, 3);
+    // headline
+    g.fillStyle = GOLD;
+    g.font = "800 34px " + sans;
+    spaced("SCAN TO SEE OUR MENU", W / 2, 420, 9);
+    if (opts.ordering) {
+      g.fillStyle = "#c9d1de";
+      g.font = "italic 600 44px " + serif;
+      g.fillText("& order right from your table", W / 2, 476);
+    }
+    // white QR panel
+    const m = qrMatrix(url), n = m.length;
+    const panelW = 700, panelX = (W - panelW) / 2, panelY = opts.ordering ? 530 : 500;
+    g.save();
+    g.shadowColor = "rgba(0,0,0,.45)";
+    g.shadowBlur = 50;
+    g.shadowOffsetY = 18;
+    g.fillStyle = "#fffdf8";
+    rr(panelX, panelY, panelW, panelW, 44);
+    g.fill();
+    g.restore();
+    g.strokeStyle = GOLD;
+    g.lineWidth = 5;
+    rr(panelX + 16, panelY + 16, panelW - 32, panelW - 32, 32);
+    g.stroke();
+    const cell = Math.floor((panelW - 120) / n), qrSize = cell * n, qx = panelX + (panelW - qrSize) / 2, qy = panelY + (panelW - qrSize) / 2;
     g.fillStyle = "#0b1220";
     m.forEach((row, r) => row.forEach((on2, c) => {
-      if (on2) g.fillRect((c + pad) * cell, (r + pad) * cell, cell, cell);
+      if (on2) g.fillRect(qx + c * cell, qy + r * cell, cell, cell);
     }));
-    const a = document.createElement("a");
-    a.href = cv.toDataURL("image/png");
-    a.download = (String(name || "menu").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "menu") + "-QR-menu.png";
-    document.body.append(a);
-    a.click();
-    a.remove();
+    // hint + details
+    let y = panelY + panelW + 82;
+    g.fillStyle = "#ffffff";
+    g.font = "700 34px " + sans;
+    g.fillText("Open your phone camera & point it here", W / 2, y);
+    y += 52;
+    g.fillStyle = "#9fb0c9";
+    g.font = "600 27px " + sans;
+    const info = [opts.address, opts.phone].filter(Boolean).join("  •  ");
+    if (info) {
+      fit(info, "600", W - 240, 28, sans);
+      g.fillText(info, W / 2, y);
+    }
+    // footer
+    g.fillStyle = "rgba(212,162,76,.75)";
+    g.font = "700 22px " + sans;
+    spaced("POWERED BY HOTEL POS  •  DEVLINKS.ONLINE", W / 2, H - 104, 3);
+    return cv;
   }
-  function printQrPoster(url, name) {
-    const svg = qrSvgMarkup(url, 10);
-    const card = `<div class="card"><div class="top">${esc(name || "Our menu")}</div><div class="ey">SCAN TO SEE OUR MENU</div>${S.settings.QR_ORDERING_ENABLED === "true" ? '<div class="sub">&amp; order from your table</div>' : ""}<div class="qr">${svg}</div><div class="hint">Open your phone camera and point it at the code</div><div class="foot">Powered by Hotel POS \xB7 devlinks.online</div></div>`;
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>QR menu</title><style>
-      @page { size: A4; margin: 10mm; }
-      * { box-sizing: border-box; } body { margin: 0; font-family: Georgia, "Times New Roman", serif; }
-      .sheet { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
-      .card { border: 1.2mm solid #0b1220; border-radius: 6mm; padding: 9mm 7mm 6mm; text-align: center; page-break-inside: avoid; outline: .5mm solid #c9973f; outline-offset: -3mm; }
-      .top { font-size: 22pt; font-weight: 700; color: #0b1220; }
-      .ey { margin-top: 3mm; font: 700 9.5pt Arial, sans-serif; letter-spacing: 2.5pt; color: #9c6b1f; }
-      .sub { font: 10pt Arial, sans-serif; color: #444; margin-top: 1mm; }
-      .qr svg { width: 62mm; height: 62mm; margin: 4mm auto 2mm; display: block; }
-      .hint { font: 8.5pt Arial, sans-serif; color: #555; }
-      .foot { margin-top: 3mm; font: 7.5pt Arial, sans-serif; color: #888; }
-    </style></head><body><div class="sheet">${card}${card}${card}${card}</div></body></html>`;
+  async function downloadQr(url, name) {
+    try {
+      const cv = await qrPosterCanvas(url, name, { ordering: S.settings.QR_ORDERING_ENABLED === "true", address: S.settings.HOTEL_ADDRESS, phone: S.settings.HOTEL_PHONE });
+      const a = document.createElement("a");
+      a.href = cv.toDataURL("image/png");
+      a.download = (String(name || "menu").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "menu") + "-QR-menu.png";
+      document.body.append(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      toast("Could not make the QR image: " + errText(e), "error");
+    }
+  }
+  async function printQrPoster(url, name) {
+    let src;
+    try {
+      const cv = await qrPosterCanvas(url, name, { ordering: S.settings.QR_ORDERING_ENABLED === "true", address: S.settings.HOTEL_ADDRESS, phone: S.settings.HOTEL_PHONE });
+      const blob = await new Promise((r) => cv.toBlob(r, "image/png"));
+      src = blob ? URL.createObjectURL(blob) : cv.toDataURL("image/png");
+    } catch (e) {
+      toast("Could not make the table cards: " + errText(e), "error");
+      return;
+    }
+    const card = `<div class="card"><img src="${src}" alt="QR menu"></div>`;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>QR table cards</title><style>
+      @page { size: A4; margin: 8mm; }
+      * { box-sizing: border-box; } html, body { margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .sheet { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; justify-items: center; }
+      .card { width: 94mm; height: 125.3mm; page-break-inside: avoid; break-inside: avoid; }
+      .card img { width: 100%; height: 100%; display: block; border-radius: 4mm; }
+      .cut { grid-column: 1 / -1; text-align: center; font: 9pt Arial, sans-serif; color: #888; }
+    </style></head><body><div class="sheet">${card}${card}${card}${card}<div class="cut">Cut along the card edges \xB7 Hotel POS</div></div></body></html>`;
     const frame = h("iframe", { style: "position:fixed;right:0;bottom:0;width:0;height:0;border:0", "aria-hidden": "true" });
     document.body.append(frame);
     const doc = frame.contentWindow.document;
     doc.open();
     doc.write(html);
     doc.close();
+    const imgs = Array.from(doc.images);
+    await Promise.all(imgs.map((im) => im.complete ? 0 : new Promise((r) => {
+      im.onload = im.onerror = r;
+    })));
     setTimeout(() => {
       try {
         frame.contentWindow.focus();
@@ -1725,7 +1872,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         toast("Printing is not available in this browser.", "error");
       }
       setTimeout(() => frame.remove(), 6e4);
-    }, 200);
+    }, 150);
   }
 
   // web/js/s-tables.js
@@ -1843,10 +1990,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         ctx && ctx.nav("pos", { orderId: o.id });
       } }, "\uFF0B Add items"));
       if (open && hasNew && can("SEND_TO_KITCHEN")) actions.append(h("button", { class: "btn btn-primary", type: "button", onclick: () => sendNow(o) }, "Send to kitchen"));
-      if ((open || billed) && hasReady && canAny(["UPDATE_KITCHEN_STATUS", "EDIT_ORDERS"])) actions.append(btn("Mark ready items served", "btn", async () => {
-        await save("kitchenStatus", { orderId: o.id, status: "SERVED" });
+      if ((open || billed) && hasReady && canAny(["UPDATE_KITCHEN_STATUS", "EDIT_ORDERS"])) actions.append(h("button", { class: "btn", type: "button", onclick: () => {
+        const ready = o.items.filter((i) => i.kitchen === "READY");
+        ready.forEach((i) => i.kitchen = "SERVED");
+        emit("orders");
         draw();
-      }));
+        save("kitchenStatus", { orderId: o.id, status: "SERVED" }).catch((e) => {
+          ready.forEach((i) => i.kitchen = "READY");
+          emit("orders");
+          draw();
+          toast(errText(e), "error");
+        });
+      } }, "Mark ready items served"));
       if (editable) actions.append(h("button", { class: "btn", type: "button", onclick: () => editInfo(o) }, "Table / guests / notes"));
       if ((open || billed) && o.items.length && canAny(["GENERATE_BILLS", "PROCESS_PAYMENT", "VIEW_BILLS"])) actions.append(h("button", { class: "btn btn-primary", type: "button", onclick: () => openBill(o.id, { onChange: draw, ctx, parent: modal }) }, billed ? "\u{1F4B5} Payment" : "\u{1F4B5} Bill & pay"));
       if (!open && !billed && o.billId && canAny(["VIEW_BILLS", "PRINT_RECEIPT", "GENERATE_BILLS", "PROCESS_PAYMENT"])) actions.append(h("button", { class: "btn btn-primary", type: "button", onclick: () => openBill(o.id, { ctx }) }, "Receipt"));
@@ -1900,13 +2055,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         reason = await promptDialog("Remove sent item", "Reason (the kitchen has already received it)");
         if (!reason) return;
       }
-      b.disabled = true;
-      try {
-        await save("removeItem", { orderId: id, lineId: l.id, reason });
-      } catch (e) {
-        toast(errText(e), "error");
-      }
+      const o = cur(), before = JSON.stringify(o);
+      o.items = o.items.filter((x) => x !== l);
+      const t = compute(o.items.reduce((a, x) => a + x.lineTotal, 0), 0, cfg());
+      Object.assign(o, { subtotal: t.subtotal, tax: t.tax, service: t.service, total: t.total });
+      emit("orders");
       draw();
+      save("removeItem", { orderId: id, lineId: l.id, reason }).catch((e) => {
+        const i = S.orders.findIndex((x) => x.id === id);
+        if (i >= 0) S.orders[i] = JSON.parse(before);
+        order = i >= 0 ? S.orders[i] : JSON.parse(before);
+        emit("orders");
+        draw();
+        toast(errText(e), "error");
+      });
     }
     async function cancel(o) {
       const reason = await promptDialog("Cancel order " + o.id, "Reason for cancelling", { confirm: "Cancel order" });
@@ -2420,7 +2582,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     </style></head><body>
     <h1>${esc(st2.HOTEL_NAME || S.hotel && S.hotel.name || "")}</h1>
     <div class="c">${esc(st2.HOTEL_ADDRESS || "")}${st2.HOTEL_PHONE ? "<br>Tel: " + esc(st2.HOTEL_PHONE) : ""}${st2.TAX_NUMBER ? "<br>Tax no: " + esc(st2.TAX_NUMBER) : ""}</div><hr>
-    <div>Bill: ${esc(bill.id)}<br>Order: ${esc(order.id)}${order.tableName ? " \xB7 " + esc(order.tableName) : " \xB7 Takeaway"}<br>Date: ${esc(fmtStamp(order.openedAt))}<br>${order.waiterName ? "Served by: " + esc(order.waiterName) + "<br>" : ""}${order.customerName ? "Customer: " + esc(order.customerName) : ""}</div><hr>
+    <div>${bill.id === order.id ? "Receipt: " + esc(bill.id) : "Bill: " + esc(bill.id) + "<br>Order: " + esc(order.id)}${order.tableName ? " \xB7 " + esc(order.tableName) : " \xB7 Takeaway"}<br>Date: ${esc(fmtStamp(order.openedAt))}<br>${order.waiterName ? "Served by: " + esc(order.waiterName) + "<br>" : ""}${order.customerName ? "Customer: " + esc(order.customerName) : ""}</div><hr>
     <table><thead><tr><td>Item</td><td class="r">Qty</td><td class="r">Rate</td><td class="r">Amount</td></tr></thead><tbody>${rows}</tbody></table><hr>
     <table>${t}</table>${pay ? "<hr><table>" + pay + "</table>" : ""}<hr>
     <div class="c"><b>${paidState}</b></div>${extra.provisional ? '<div class="c"><small>Saved offline - bill number will be given when online</small></div>' : ""}<hr>
@@ -2797,13 +2959,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const payments = x.pay ? [{ method: x.method, amount: t.total, reference: x.reference }] : [];
         const dsc = { discountType: disc.type, discountValue: disc.value, discountReason: disc.reason };
         const type = base ? base.type : table ? "DINE_IN" : "TAKEAWAY";
-        const localOrder = { id: base ? base.id : "\u2026", type, tableId: table ? table.id : base ? base.tableId : "", tableName: table ? table.name : base ? base.tableName : "", customerName: base ? base.customerName : cart.customerName, waiterName: base ? base.waiterName : S.user.name, openedAt: base ? base.openedAt : stamp(), items: allLines };
+        const orderUid = cart.uid || newId("ord");
+        const ref = "R-" + String(orderUid).slice(-6).toUpperCase();
+        const localOrder = { id: base ? base.id : ref, type, tableId: table ? table.id : base ? base.tableId : "", tableName: table ? table.name : base ? base.tableName : "", customerName: base ? base.customerName : cart.customerName, waiterName: base ? base.waiterName : S.user.name, openedAt: base ? base.openedAt : stamp(), items: allLines };
         const localBill = (id) => Object.assign({}, t, { id, paid: x.pay ? t.total : 0, paymentStatus: x.pay ? "PAID" : "UNPAID", payments: payments.map((p2) => Object.assign({ at: stamp() }, p2)) });
+        if (x.print) printReceipt(localOrder, localBill(base ? "BIL-" + String(base.id).substring(4) : ref), x);
         let job;
         if (base) {
           job = save("addItems", { orderId: base.id, items, send: false }).then(() => billAndPay(base.id, Object.assign({ payments, payUid }, dsc)));
         } else {
-          job = quickSale(Object.assign({ uid: cart.uid || newId("ord"), type, tableId: table ? table.id : "", guests: Number(cart.guests) || 0, customerId: cart.customerId, customerName: cart.customerName, notes: cart.notes, items, payments, payUid, payFull: true }, dsc));
+          job = quickSale(Object.assign({ uid: orderUid, type, tableId: table ? table.id : "", guests: Number(cart.guests) || 0, customerId: cart.customerId, customerName: cart.customerName, notes: cart.notes, items, payments, payUid, payFull: true }, dsc));
         }
         reset();
         drawMenu();
@@ -2812,11 +2977,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         job.then((r) => {
           if (!r) return;
           if (r.queued || r.partial) {
-            if (x.print) printReceipt(localOrder, localBill("REF-" + String(snapshot.uid || payUid).slice(-6).toUpperCase()), Object.assign({ provisional: true }, x));
             toast(r.partial && !r.queued ? "Order saved, but the bill could not be finished. Open the order to take payment." : "No connection: saved on this device and will be sent automatically.", "info", 8e3);
             return;
           }
-          if (r.bill && x.print) printReceipt(r.order || localOrder, r.bill, x);
           if (r.bill && x.pay && r.bill.paymentStatus !== "PAID") toast("The bill total changed on the server. Balance due: " + M2(r.bill.total - r.bill.paid) + ". Open the order to finish the payment.", "error", 1e4);
         }).catch((err) => {
           if (!cart.lines.length) Object.assign(cart, snapshot);
@@ -2931,7 +3094,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }
     function draw() {
-      const live = S.orders.filter((o) => !o.tmp && o.items && stageOf(o));
+      const live = S.orders.filter((o) => o.items && stageOf(o));
       const sorted = (arr) => arr.sort((a, b) => (a.items.find((i) => i.sentAt) || {}).sentAt > (b.items.find((i) => i.sentAt) || {}).sentAt ? 1 : -1);
       board.replaceChildren(...COLS.map(([stage, title, next, nextLabel]) => {
         const list = sorted(live.filter((o) => stageOf(o) === stage));
@@ -2945,14 +3108,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             return h(
               "article",
               { class: "ticket" + (mins >= 20 && stage !== "READY" ? " late" : "") },
-              h("header", null, h("strong", null, o.tableName || "Takeaway"), h("span", null, o.id.slice(-4) + " \xB7 " + timeOf(o.openedAt)), h("span", { class: "age" }, mins + " min")),
+              h("header", null, h("strong", null, o.tableName || "Takeaway"), h("span", null, (o.tmp ? "new" : o.id.slice(-4)) + " \xB7 " + timeOf(o.openedAt)), h("span", { class: "age" }, mins + " min")),
               h("ul", null, o.items.filter((i) => ["SENT", "PREPARING", "READY"].includes(i.kitchen)).map((i) => h("li", { class: i.kitchen === stage ? "" : "dim" }, h("b", null, i.qty + "\xD7"), " " + i.name, i.notes ? h("div", { class: "note" }, i.notes) : null))),
-              canMove || next === "SERVED" && canAny(["EDIT_ORDERS"]) ? h("button", { class: "btn btn-primary btn-block", type: "button", onclick: () => move(o, stage, next) }, nextLabel + (mine.length !== o.items.length ? " (" + mine.length + ")" : "")) : null
+              canMove || next === "SERVED" && canAny(["EDIT_ORDERS"]) ? h("button", { class: "btn btn-primary btn-block", type: "button", disabled: !!o.tmp, onclick: () => move(o, stage, next) }, o.tmp ? "Saving\u2026" : nextLabel + (mine.length !== o.items.length ? " (" + mine.length + ")" : "")) : null
             );
           }) : emptyState("Nothing here")
         );
       }));
-      const ids = new Set(live.filter((o) => stageOf(o) === "SENT").map((o) => o.id + ":" + o.items.filter((i) => i.kitchen === "SENT").map((i) => i.id).join()));
+      const ids = new Set(live.filter((o) => stageOf(o) === "SENT").map((o) => (o.uid || o.id) + ":" + o.items.filter((i) => i.kitchen === "SENT").reduce((a, i) => a + i.qty, 0)));
       if (!first) ids.forEach((k) => {
         if (!seen.has(k)) beep();
       });
@@ -3003,7 +3166,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     function visible() {
       const t = st.q.toLowerCase();
-      return rows.filter((o) => (st.status === "ALL" || o.status === st.status) && (!t || [o.id, o.tableName, o.customerName, o.waiterName].some((v) => String(v || "").toLowerCase().includes(t))));
+      return rows.filter((o) => (st.status === "ALL" || o.status === st.status) && (!t || [o.id, o.tableName, o.customerName, o.waiterName, o.uid ? "r-" + String(o.uid).slice(-6) : ""].some((v) => String(v || "").toLowerCase().includes(t))));
     }
     function draw() {
       const v = visible(), total = v.filter((o) => o.status !== "CANCELLED").reduce((s, o) => s + o.total, 0);
@@ -3968,6 +4131,124 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
 
 
+
+  /* Shows an accepted QR order on Tables / Kitchen at once, before the sheet answers. Returns an undo function. */
+  function qrLocalOrder(q, send) {
+    const now = stamp();
+    const lines = (q.items || []).map((l, i) => ({ id: "tmp-qr-" + i, menuId: l.menuId, name: l.name, qty: l.qty, price: l.price, lineTotal: r2(l.price * l.qty), notes: l.notes || "", kitchen: send ? "SENT" : "NEW", sentAt: send ? now : "" }));
+    const open = q.tableId ? S.orders.find((o) => o.tableId === q.tableId && OPEN.includes(o.status) && !o.tmp) : null;
+    if (open) {
+      const before = JSON.stringify(open);
+      open.items = open.items.concat(lines);
+      const t = compute(open.items.reduce((a, l) => a + l.lineTotal, 0), 0, cfg());
+      Object.assign(open, { subtotal: t.subtotal, tax: t.tax, service: t.service, total: t.total, status: "OPEN" });
+      emit("orders", "tables");
+      return () => {
+        const i = S.orders.findIndex((o) => o.id === open.id);
+        if (i >= 0) S.orders[i] = JSON.parse(before);
+        emit("orders", "tables");
+      };
+    }
+    const table = q.tableId ? S.tables.find((t) => t.id === q.tableId) : null;
+    const t = compute(lines.reduce((a, l) => a + l.lineTotal, 0), 0, cfg());
+    const tmp = { id: "Saving…", tmp: true, uid: "qr-" + String(q.uid).substring(0, 36), type: table ? "DINE_IN" : "TAKEAWAY", tableId: table ? table.id : "", tableName: table ? table.name : "", customerName: q.name, guests: 0, waiterId: S.user.id, waiterName: S.user.name, status: "OPEN", subtotal: t.subtotal, discount: 0, tax: t.tax, service: t.service, total: t.total, notes: "QR order", openedAt: now, billId: "", items: lines };
+    S.orders.unshift(tmp);
+    if (table) {
+      table.status = "OCCUPIED";
+      table.currentOrderId = tmp.id;
+    }
+    emit("orders", "tables");
+    return () => {
+      S.orders = S.orders.filter((o) => o !== tmp);
+      if (table && table.currentOrderId === tmp.id) {
+        table.status = "FREE";
+        table.currentOrderId = "";
+      }
+      emit("orders", "tables");
+    };
+  }
+  /* Direct bill for a QR order: the bill opens at once; the order is only created when you pay or print the bill.
+     Closing the dialog leaves the QR order waiting, so nothing is lost. */
+  function qrDirectBill(q, ctx) {
+    const M2 = (n) => money(n, S.settings);
+    // If the customer's table already has an open order, the server adds these items to it: bill the whole table.
+    const base = q.tableId ? S.orders.find((o) => o.tableId === q.tableId && OPEN.includes(o.status) && !o.tmp) : null;
+    const lines = (base ? base.items.map((l) => ({ name: l.name, qty: l.qty, price: l.price, lineTotal: l.lineTotal, notes: l.notes || "" })) : []).concat((q.items || []).map((l) => ({ name: l.name, qty: l.qty, price: l.price, lineTotal: r2(l.price * l.qty), notes: l.notes || "" })));
+    const sub = r2(lines.reduce((a, l) => a + l.lineTotal, 0));
+    const disc = { type: "NONE", value: 0, reason: "" };
+    const totals = () => compute(sub, discountAmount(sub, disc.type, disc.value), cfg());
+    const where = (q.type === "TAKEAWAY" ? "Takeaway" : q.tableName || "Dine-in") + " \xB7 " + q.name + (base ? " (+ table order " + base.id + ")" : "");
+    const preview = h("div");
+    let panel = null;
+    function drawPreview() {
+      preview.replaceChildren(...[totalsBlock(totals()), !S.user.isOwner && disc.type === "PERCENT" && disc.value > cfg().maxDiscount ? h("div", { class: "form-error" }, "You may give at most " + cfg().maxDiscount + "% discount.") : null].filter(Boolean));
+      if (panel) panel.refresh();
+    }
+    let discEl = null;
+    if (can("APPLY_DISCOUNT")) {
+      const typeSel = field({ label: "Discount", options: [{ value: "NONE", label: "No discount" }, { value: "PERCENT", label: "Percent %" }, { value: "FIXED", label: "Fixed amount" }], value: "NONE" });
+      const val = field({ label: "Value", type: "number", value: "", inputmode: "decimal" });
+      const why = field({ label: "Reason", value: "", maxlength: 80 });
+      const sync = () => {
+        disc.type = typeSel.value();
+        disc.value = Number(val.value()) || 0;
+        disc.reason = why.value();
+        val.el.hidden = why.el.hidden = disc.type === "NONE";
+        drawPreview();
+      };
+      [typeSel.input, val.input, why.input].forEach((i) => i.addEventListener("input", sync));
+      val.el.hidden = why.el.hidden = true;
+      discEl = h("details", { class: "qdisc" }, h("summary", null, "Discount"), h("div", { class: "form-grid" }, typeSel.el, val.el, h("div", { class: "span-2" }, why.el)));
+    }
+    const info = h("div", { class: "muted small" }, "\u{1F4F1} " + q.phone + (q.notes ? " \xB7 \u{1F4DD} " + q.notes : ""));
+    const list = h("div", { class: "lines compact qlines" }, lines.map((l) => h("div", { class: "line" }, h("div", { class: "ln" }, l.name), h("div", { class: "lq" }, "\xD7" + l.qty), h("div", { class: "lt" }, M2(l.lineTotal)), h("span"))));
+    const m = openModal({ title: "Direct bill \xB7 " + where, content: h("div", { class: "stack" }, info, list, discEl, preview) });
+    m.box.classList.add("wide");
+    panel = quickPayPanel({
+      getDue: () => totals().total,
+      payAllowed: can("PROCESS_PAYMENT"),
+      showBillOnly: can("GENERATE_BILLS"),
+      onGo: (x) => {
+        if (disc.type !== "NONE" && disc.value > 0 && !disc.reason) throw new Error("Please write the reason for the discount.");
+        if (!S.user.isOwner && disc.type === "PERCENT" && disc.value > cfg().maxDiscount) throw new Error("You may give at most " + cfg().maxDiscount + "% discount.");
+        finish(x);
+        m.close();
+      }
+    });
+    m.box.querySelector(".content > .stack").append(panel.el);
+    drawPreview();
+    setTimeout(() => panel.focus(), 0);
+    function finish(x) {
+      const t = totals();
+      const payUid = newId("pay");
+      const payments = x.pay ? [{ method: x.method, amount: t.total, reference: x.reference }] : [];
+      const ref = "R-" + String("qr-" + String(q.uid).substring(0, 36)).slice(-6).toUpperCase();
+      const table = q.tableId ? S.tables.find((tb) => tb.id === q.tableId) : null;
+      const localOrder = { id: ref, type: table ? "DINE_IN" : "TAKEAWAY", tableId: table ? table.id : "", tableName: table ? table.name : "", customerName: q.name, waiterName: S.user.name, openedAt: stamp(), items: lines };
+      const localBill = Object.assign({}, t, { id: ref, paid: x.pay ? t.total : 0, paymentStatus: x.pay ? "PAID" : "UNPAID", payments: payments.map((p2) => Object.assign({ at: stamp() }, p2)) });
+      if (x.print) printReceipt(localOrder, localBill, x);
+      qrHandled(q.id, true);
+      toast(x.pay ? "Paid ✓ " + M2(t.total) + (x.change > 0 ? " \xB7 Change " + M2(x.change) : "") : "Bill ready ✓", "ok", 2600);
+      (async () => {
+        let r1;
+        try {
+          r1 = await save("acceptQrOrder", { qrId: q.id, send: false }, { queue: false });
+        } catch (e) {
+          qrHandled(q.id, false);
+          toast("QR order " + q.name + " was NOT billed: " + errText(e) + " It is back in QR orders.", "error", 12e3);
+          return;
+        }
+        if (!r1 || !r1.order) return;
+        try {
+          const r = await billAndPay(r1.order.id, { discountType: disc.type, discountValue: disc.value, discountReason: disc.reason, payments, payUid });
+          if (r && r.bill && x.pay && r.bill.paymentStatus !== "PAID") toast("The bill total changed on the server. Balance due: " + M2(r.bill.total - r.bill.paid) + ". Open the order to finish the payment.", "error", 1e4);
+        } catch (e) {
+          toast("Order " + r1.order.id + " was saved, but the bill was not: " + errText(e) + " Open it in Orders & bills to take payment.", "error", 12e3);
+        }
+      })();
+    }
+  }
+
   // web/js/s-qr.js
   var s_qr_exports = {};
   __export(s_qr_exports, {
@@ -3984,22 +4265,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return m < 1 ? "just now" : m < 60 ? m + " min ago" : Math.round(m / 60) + " h ago";
     };
     function card(q) {
-      const accept = h("button", { class: "btn btn-primary", type: "button" }, "✓ Accept & send to kitchen");
+      const accept = h("button", { class: "btn btn-primary", type: "button" }, "\u2713 Accept & send to kitchen");
       const reject = h("button", { class: "btn btn-danger", type: "button" }, "Reject");
       const canBill = canAny(["GENERATE_BILLS", "PROCESS_PAYMENT"]);
-      const direct = canBill ? h("button", { class: "btn btn-ok", type: "button", title: "Make the order without sending it to the kitchen and open Bill & pay" }, "\u{1F4B5} Direct bill") : null;
-      if (direct) direct.addEventListener("click", () => act(direct, async () => {
-        const r = await save("acceptQrOrder", { qrId: q.id, send: false }, { queue: false });
-        qrHandled(q.id, true);
-        if (r && r.order) openBill(r.order.id, { ctx });
-      }, { busy: "Opening bill\u2026" }));
+      const direct = canBill ? h("button", { class: "btn btn-ok", type: "button", title: "Bill and take payment now, without sending it to the kitchen" }, "\u{1F4B5} Direct bill") : null;
+      if (direct) direct.onclick = () => qrDirectBill(q, ctx);
       accept.onclick = () => {
+        const send = can("SEND_TO_KITCHEN");
+        const undo = qrLocalOrder(q, send);
         qrHandled(q.id, true);
-        save("acceptQrOrder", { qrId: q.id, send: can("SEND_TO_KITCHEN") }, { queue: false }).then((r) => {
-          toast("Accepted ✓ " + (r && r.order ? r.order.id + (r.order.tableName ? " \xB7 " + r.order.tableName : " \xB7 Takeaway") : ""), "ok", 3500);
-        }).catch((e) => {
+        toast("Accepted \u2713 " + (q.type === "TAKEAWAY" ? "Takeaway" : q.tableName) + (send ? " \xB7 sent to kitchen" : ""), "ok", 2200);
+        save("acceptQrOrder", { qrId: q.id, send }, { queue: false }).catch((e) => {
+          undo();
           qrHandled(q.id, false);
-          toast("Not accepted: " + errText(e), "error", 7e3);
+          toast("QR order NOT accepted: " + errText(e), "error", 8e3);
         });
       };
       reject.onclick = async () => {
@@ -4116,6 +4395,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const on2 = yn("Customers can send orders from the menu (staff accept them first)", "QR_ORDERING_ENABLED");
       const qrBox = h("div", { class: "qr-preview" }, qrSvg(url, 6));
       const name = S.settings.HOTEL_NAME || S.hotel && S.hotel.name || "";
+      qrPosterCanvas(url, name, { ordering: S.settings.QR_ORDERING_ENABLED === "true", address: S.settings.HOTEL_ADDRESS, phone: S.settings.HOTEL_PHONE }).then((cv) => {
+        qrBox.classList.add("poster");
+        qrBox.replaceChildren(h("img", { src: cv.toDataURL("image/png"), alt: "QR menu card preview" }));
+      }).catch(() => {
+      });
       return h(
         "div",
         { class: "stack" },
@@ -5734,9 +6018,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     hotelId = String(hotelId || "").toUpperCase();
     document.title = "Menu";
     const KEY = "hotelpos.qm." + hotelId;
+    const clean = (v) => {
+      const s2 = v === null || v === void 0 ? "" : String(v).trim();
+      return /^(null|undefined|nan|false)$/i.test(s2) ? "" : s2;
+    };
     const mem = (() => {
       try {
-        return JSON.parse(localStorage.getItem(KEY) || "{}");
+        return JSON.parse(localStorage.getItem(KEY) || "{}") || {};
       } catch (e) {
         return {};
       }
@@ -5747,15 +6035,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       } catch (e) {
       }
     };
-    let link = null, data = null, cart = mem.cart || {}, filter = "", activeCat = "", statusTimer = null;
-    const st = { type: mem.type || "DINE_IN", tableId: mem.tableId || "", name: mem.name || "", phone: mem.phone || "", notes: "" };
+    let link = null, data = null, cart = mem.cart && typeof mem.cart === "object" ? mem.cart : {}, filter = "", statusTimer = null, spy = null;
+    const st = { type: mem.type || "DINE_IN", tableId: mem.tableId || "", name: clean(mem.name), phone: clean(mem.phone), notes: "" };
+    /* replaceChildren() would print "null" for empty parts: drop them first. */
+    const put = (el, ...kids) => el.replaceChildren(...kids.flat(Infinity).filter((x) => x !== null && x !== void 0 && x !== false));
     const page = h("div", { class: "qm" });
-    root2.replaceChildren(page);
+    put(root2, page);
     const M2 = (n) => money(n, data ? data.settings : {});
+    const IC = {
+      pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+      phone: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>',
+      search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+      bag: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l-1 12H7z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>',
+      close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+      check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+      clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+      x: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"/></svg>'
+    };
+    const ic = (n, cls) => svgEl(IC[n], "ic " + (cls || ""));
     async function resolve(force) {
       if (!force && link && Date.now() - link.at < 5 * 3600 * 1e3) return link;
       const r = await call("resolveMenu", { hotelId });
-      link = { url: r.appScriptUrl, token: r.menuToken, name: r.hotelName, at: Date.now() };
+      link = { url: r.appScriptUrl, token: r.menuToken, name: clean(r.hotelName), at: Date.now() };
       return link;
     }
     async function pub(action, d, retried) {
@@ -5770,6 +6071,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         throw e;
       }
     }
+    /* Everything shown to customers goes through clean(), so an empty sheet cell never shows as "null". */
+    function tidy(d) {
+      d.hotel = { name: clean(d.hotel && d.hotel.name) || (link && link.name) || "Menu", address: clean(d.hotel && d.hotel.address), phone: clean(d.hotel && d.hotel.phone) };
+      d.categories = (d.categories || []).map((c) => ({ id: clean(c.id), name: clean(c.name) || "Menu" }));
+      d.menu = (d.menu || []).map((m) => ({ id: clean(m.id), name: clean(m.name) || "Item", categoryId: clean(m.categoryId), description: clean(m.description), price: Number(m.price) || 0, img: clean(m.thumbUrl) || clean(m.imageUrl), big: clean(m.imageUrl) || clean(m.thumbUrl), available: m.available !== false, featured: !!m.featured })).filter((m) => m.id);
+      d.tables = (d.tables || []).map((t) => ({ id: clean(t.id), name: clean(t.name) || "Table" })).filter((t) => t.id);
+      d.settings = d.settings || {};
+      return d;
+    }
     const lines = () => Object.keys(cart).map((id) => {
       const m = data && data.menu.find((x) => x.id === id);
       return m ? { m, qty: cart[id].qty } : null;
@@ -5778,77 +6088,144 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const subtotal = () => lines().reduce((a, l) => a + l.qty * l.m.price, 0);
     function setQty(id, q) {
       q = Math.max(0, Math.min(50, q));
+      const was = cart[id] ? cart[id].qty : 0;
       if (q) cart[id] = { qty: q };
       else delete cart[id];
       mem.cart = cart;
       saveMem();
-      drawBar();
+      drawBar(q > was);
       page.querySelectorAll('[data-qid="' + id + '"]').forEach((el) => el.replaceWith(qtyCtl(data.menu.find((x) => x.id === id))));
     }
-    function qtyCtl(m) {
+    function qtyCtl(m, big) {
       const q = cart[m.id] ? cart[m.id].qty : 0;
+      const cls = big ? " big" : "";
       if (!m.available) return h("span", { class: "qm-sold", "data-qid": m.id }, "Sold out");
       if (!data.ordering) return h("span", { "data-qid": m.id });
-      if (!q) return h("button", { class: "qm-add", type: "button", "data-qid": m.id, "aria-label": "Add " + m.name, onclick: () => setQty(m.id, 1) }, "Add", h("span", { "aria-hidden": "true" }, "+"));
+      if (!q) return h("button", { class: "qm-add" + cls, type: "button", "data-qid": m.id, "aria-label": "Add " + m.name, onclick: (e) => {
+        e.stopPropagation();
+        setQty(m.id, 1);
+      } }, "Add", h("span", { "aria-hidden": "true" }, "+"));
       return h(
         "div",
-        { class: "qm-step", "data-qid": m.id },
+        { class: "qm-step" + cls, "data-qid": m.id, onclick: (e) => e.stopPropagation() },
         h("button", { type: "button", "aria-label": "One less", onclick: () => setQty(m.id, q - 1) }, "−"),
         h("span", null, q),
         h("button", { type: "button", "aria-label": "One more", onclick: () => setQty(m.id, q + 1) }, "+")
       );
     }
+    function thumb(m, cls) {
+      if (m.img) return h("div", { class: cls }, h("img", { src: m.img, alt: "", loading: "lazy", referrerpolicy: "no-referrer", onerror: (e) => {
+        e.target.remove();
+      } }), h("span", { class: "qm-mono" }, m.name.charAt(0)));
+      return h("div", { class: cls + " noimg" }, h("span", { class: "qm-mono" }, m.name.charAt(0)));
+    }
     function itemCard(m) {
-      const img = m.thumbUrl || m.imageUrl;
       return h(
         "article",
-        { class: "qm-item" + (m.available ? "" : " off") },
+        { class: "qm-item" + (m.available ? "" : " off"), tabindex: "0", role: "button", "aria-label": m.name, onclick: () => openItem(m), onkeydown: (e) => {
+          if (e.key === "Enter") openItem(m);
+        } },
         h(
           "div",
           { class: "qm-item-body" },
-          h("h3", null, m.name, m.featured ? h("span", { class: "qm-star", title: "Popular" }, "★") : null),
+          h("h3", null, m.name, m.featured ? h("span", { class: "qm-tag" }, "Popular") : null),
           m.description ? h("p", null, m.description) : null,
           h("div", { class: "qm-price" }, M2(m.price))
         ),
-        h(
-          "div",
-          { class: "qm-item-side" },
-          img ? h("div", { class: "qm-img" }, h("img", { src: img, alt: "", loading: "lazy", referrerpolicy: "no-referrer", onerror: (e) => e.target.parentNode.classList.add("noimg") })) : h("div", { class: "qm-img noimg" }, h("span", null, (m.name || "?").charAt(0))),
-          qtyCtl(m)
-        )
+        h("div", { class: "qm-item-side" }, thumb(m, "qm-img"), qtyCtl(m))
       );
     }
+    /* Bottom sheet used for the item details and the cart. */
+    function sheet(title, content, onClose) {
+      const prev = document.activeElement;
+      const panel = h("div", { class: "qm-sheet-panel", role: "dialog", "aria-modal": "true", "aria-label": title || "Details" });
+      const overlay = h("div", { class: "qm-sheet-overlay" }, panel);
+      const api = { close() {
+        document.removeEventListener("keydown", onKey);
+        overlay.classList.add("closing");
+        setTimeout(() => overlay.remove(), 180);
+        document.documentElement.classList.remove("qm-lock");
+        if (prev && prev.focus) prev.focus();
+        if (onClose) onClose();
+      }, panel };
+      function onKey(e) {
+        if (e.key === "Escape") api.close();
+      }
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) api.close();
+      });
+      panel.append(...[
+        h("div", { class: "qm-grip", "aria-hidden": "true" }),
+        title ? h("header", { class: "qm-sheet-head" }, h("h2", null, title), h("button", { class: "qm-x", type: "button", "aria-label": "Close", onclick: () => api.close() }, ic("close"))) : h("button", { class: "qm-x floating", type: "button", "aria-label": "Close", onclick: () => api.close() }, ic("close")),
+        content
+      ].filter(Boolean));
+      document.addEventListener("keydown", onKey);
+      document.documentElement.classList.add("qm-lock");
+      document.body.append(overlay);
+      return api;
+    }
+    function openItem(m) {
+      let qty = cart[m.id] ? cart[m.id].qty : 1;
+      const box = h("div", { class: "qm-detail" });
+      const s2 = sheet("", box);
+      function draw() {
+        put(box, 
+          m.big ? h("div", { class: "qm-hero-img" }, h("img", { src: m.big, alt: "", referrerpolicy: "no-referrer", onerror: (e) => e.target.parentNode.remove() })) : null,
+          h(
+            "div",
+            { class: "qm-detail-body" },
+            m.featured ? h("span", { class: "qm-tag" }, "Popular") : null,
+            h("h2", null, m.name),
+            h("div", { class: "qm-price big" }, M2(m.price)),
+            m.description ? h("p", null, m.description) : null,
+            !m.available ? h("div", { class: "qm-sold big" }, "Sold out right now") : data.ordering ? h(
+              "div",
+              { class: "qm-detail-actions" },
+              h("div", { class: "qm-step big" }, h("button", { type: "button", "aria-label": "One less", onclick: () => {
+                qty = Math.max(1, qty - 1);
+                draw();
+              } }, "−"), h("span", null, qty), h("button", { type: "button", "aria-label": "One more", onclick: () => {
+                qty = Math.min(50, qty + 1);
+                draw();
+              } }, "+")),
+              h("button", { class: "qm-send", type: "button", onclick: () => {
+                setQty(m.id, qty);
+                s2.close();
+              } }, (cart[m.id] ? "Update order" : "Add to order") + " \xB7 " + M2(qty * m.price))
+            ) : null
+          )
+        );
+      }
+      draw();
+    }
     const bar = h("div", { class: "qm-bar", hidden: true });
-    function drawBar() {
+    function drawBar(bump) {
       const n = count();
       bar.hidden = !n || !data || !data.ordering;
       if (bar.hidden) return;
-      bar.replaceChildren(h(
+      const btn2 = h(
         "button",
-        { class: "qm-bar-btn", type: "button", onclick: openCart },
+        { class: "qm-bar-btn" + (bump ? " bump" : ""), type: "button", onclick: openCart },
         h("span", { class: "qm-bar-n" }, n),
-        h("span", null, "View order"),
+        h("span", { class: "qm-bar-l" }, "View your order"),
         h("strong", null, M2(subtotal()))
-      ));
+      );
+      put(bar, btn2);
     }
     function drawMenu() {
+      if (spy) spy.disconnect();
       const q = filter.trim().toLowerCase();
       const cats = data.categories.slice();
-      const loose = data.menu.filter((m) => !m.categoryId || !cats.some((c) => c.id === m.categoryId));
-      if (loose.length) cats.push({ id: "", name: "More" });
-      const chips = h("nav", { class: "qm-chips", "aria-label": "Categories" }, cats.map((c) => h("button", { type: "button", class: c.id === activeCat ? "on" : "", onclick: () => {
-        activeCat = c.id;
+      const known = new Set(cats.map((c) => c.id));
+      if (data.menu.some((m) => !known.has(m.categoryId))) cats.push({ id: "", name: "More" });
+      const inCat = (m, c) => c.id ? m.categoryId === c.id : !known.has(m.categoryId);
+      const match = (m) => !q || m.name.toLowerCase().includes(q) || m.description.toLowerCase().includes(q);
+      const shown = cats.map((c) => ({ c, items: data.menu.filter((m) => inCat(m, c) && match(m)) })).filter((x) => x.items.length);
+      const chips = h("nav", { class: "qm-chips", "aria-label": "Categories" }, shown.map(({ c }, i) => h("button", { type: "button", class: i === 0 ? "on" : "", "data-chip": c.id, onclick: () => {
         const sec = page.querySelector('[data-cat="' + c.id + '"]');
-        if (sec) window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY - 118, behavior: "smooth" });
-        chips.querySelectorAll("button").forEach((b, i) => b.classList.toggle("on", cats[i].id === c.id));
+        if (sec) window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY - (sticky.offsetHeight + 6), behavior: "smooth" });
       } }, c.name)));
-      const sections = cats.map((c) => {
-        const items = data.menu.filter((m) => (c.id ? m.categoryId === c.id : !m.categoryId || !data.categories.some((x) => x.id === m.categoryId)) && (!q || m.name.toLowerCase().includes(q) || String(m.description || "").toLowerCase().includes(q)));
-        if (!items.length) return null;
-        return h("section", { class: "qm-sec", "data-cat": c.id }, h("h2", null, c.name, h("span", null, items.length)), h("div", { class: "qm-list" }, items.map(itemCard)));
-      }).filter(Boolean);
-      const featured = !q ? data.menu.filter((m) => m.featured && m.available) : [];
-      const search = h("input", { class: "qm-search", type: "search", placeholder: "Search the menu", value: filter, "aria-label": "Search the menu", oninput: (e) => {
+      const search = h("input", { class: "qm-search", type: "search", placeholder: "Search dishes", value: filter, "aria-label": "Search the menu", oninput: (e) => {
         filter = e.target.value;
         const pos = e.target.selectionStart;
         drawMenu();
@@ -5859,66 +6236,109 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         } catch (x) {
         }
       } });
+      const sticky = h("div", { class: "qm-sticky" }, h("div", { class: "qm-mini" }, h("b", null, data.hotel.name)), h("label", { class: "qm-search-wrap" }, ic("search", "qm-s-ic"), search), shown.length > 1 ? chips : null);
+      const featured = !q ? data.menu.filter((m) => m.featured && m.available) : [];
       const hd = data.hotel;
-      page.replaceChildren(
+      const sections = shown.map(({ c, items }) => h("section", { class: "qm-sec", "data-cat": c.id }, h("h2", null, c.name, h("span", null, items.length + (items.length === 1 ? " item" : " items"))), h("div", { class: "qm-list" }, items.map(itemCard))));
+      put(page, 
         h(
           "header",
           { class: "qm-hero" },
-          h("div", { class: "qm-hero-in" }, h("div", { class: "qm-eyebrow" }, data.ordering ? "Menu \xB7 Order from your table" : "Menu"), h("h1", null, hd.name || link.name), hd.address || hd.phone ? h("p", null, [hd.address, hd.phone].filter(Boolean).join(" \xB7 ")) : null)
+          h(
+            "div",
+            { class: "qm-hero-in" },
+            h("div", { class: "qm-brand" }, icon("crest", "qm-crest"), h("div", { class: "qm-eyebrow" }, data.ordering ? "Menu \xB7 Order from your table" : "Our menu")),
+            h("h1", null, hd.name),
+            hd.address ? h("p", { class: "qm-addr" }, ic("pin"), hd.address) : null,
+            h(
+              "div",
+              { class: "qm-hero-row" },
+              data.ordering ? h("span", { class: "qm-pill" }, "Dine-in") : null,
+              data.ordering ? h("span", { class: "qm-pill" }, "Takeaway") : null,
+              hd.phone ? h("a", { class: "qm-pill call", href: "tel:" + hd.phone.replace(/[^0-9+]/g, "") }, ic("phone"), hd.phone) : null
+            )
+          )
         ),
-        h("div", { class: "qm-sticky" }, h("div", { class: "qm-search-wrap" }, search), cats.length > 1 ? chips : null),
-        featured.length ? h("section", { class: "qm-feat" }, h("h2", null, "Popular"), h("div", { class: "qm-feat-row" }, featured.map((m) => h(
+        sticky,
+        featured.length ? h("section", { class: "qm-feat" }, h("div", { class: "qm-feat-h" }, h("h2", null, "Chef’s picks"), h("span", null, "Most loved by our guests")), h("div", { class: "qm-feat-row" }, featured.map((m) => h(
           "div",
-          { class: "qm-fcard" },
-          m.thumbUrl || m.imageUrl ? h("img", { src: m.thumbUrl || m.imageUrl, alt: "", loading: "lazy", referrerpolicy: "no-referrer" }) : h("div", { class: "qm-fimg" }, m.name.charAt(0)),
+          { class: "qm-fcard", role: "button", tabindex: "0", onclick: () => openItem(m) },
+          thumb(m, "qm-fimg"),
           h("div", { class: "qm-fbody" }, h("b", null, m.name), h("span", null, M2(m.price))),
           qtyCtl(m)
         )))) : null,
-        sections.length ? h("main", { class: "qm-main" }, sections) : h("div", { class: "qm-empty" }, q ? "Nothing matches “" + filter + "”." : "The menu is empty right now."),
-        h("footer", { class: "qm-foot" }, h("div", null, "Powered by ", h("b", null, "Hotel POS")), devCredit("dev-credit qm-credit")),
+        shown.length ? h("main", { class: "qm-main" }, sections) : h("div", { class: "qm-empty" }, h("b", null, q ? "No dishes match “" + filter + "”" : "The menu is being updated"), h("span", null, q ? "Try another word." : "Please ask a waiter for today’s menu.")),
+        h(
+          "footer",
+          { class: "qm-foot" },
+          h("div", { class: "qm-foot-name" }, hd.name),
+          hd.address ? h("div", null, hd.address) : null,
+          data.ordering ? h("div", { class: "qm-foot-note" }, "Prices include item price only; tax is added at checkout where applicable.") : null,
+          h("div", { class: "qm-powered" }, "Powered by ", h("b", null, "Hotel POS")),
+          devCredit("dev-credit qm-credit")
+        ),
         bar
       );
       drawBar();
+      // Highlight the category you are looking at while scrolling.
+      if ("IntersectionObserver" in window && shown.length > 1) {
+        spy = new IntersectionObserver((entries) => {
+          entries.forEach((en) => {
+            if (!en.isIntersecting) return;
+            const id = en.target.getAttribute("data-cat");
+            chips.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.getAttribute("data-chip") === id));
+            const on2 = chips.querySelector("button.on");
+            if (on2 && chips.scrollTo) chips.scrollTo({ left: on2.offsetLeft - 16, behavior: "smooth" });
+          });
+        }, { rootMargin: "-40% 0px -55% 0px" });
+        page.querySelectorAll(".qm-sec").forEach((sec) => spy.observe(sec));
+      }
     }
+    window.addEventListener("scroll", () => {
+      const s2 = page.querySelector(".qm-sticky");
+      if (s2) s2.classList.toggle("stuck", window.scrollY > 150);
+    }, { passive: true });
     function field2(label, input, hint) {
       return h("label", { class: "qm-field" }, h("span", null, label), input, hint ? h("small", null, hint) : null);
     }
     function openCart() {
       const box = h("div", { class: "qm-cart" });
-      const modal = openModal({ title: "Your order", content: box, actions: null });
-      modal.box.classList.add("qm-sheet");
+      const s2 = sheet("Your order", box);
       const errSlot = h("div");
       function draw() {
         const ls = lines();
         if (!ls.length) {
-          modal.close();
+          s2.close();
           return;
         }
         const t = compute(subtotal(), 0, cfgFrom(data.settings));
-        const typeSeg = h("div", { class: "qm-seg" }, [["DINE_IN", "Dine-in"], ["TAKEAWAY", "Takeaway"]].map(([k, l]) => h("button", { type: "button", class: st.type === k ? "on" : "", onclick: () => {
+        const typeSeg = h("div", { class: "qm-seg", role: "group", "aria-label": "Order type" }, [["DINE_IN", "Dine-in"], ["TAKEAWAY", "Takeaway"]].map(([k, l]) => h("button", { type: "button", class: st.type === k ? "on" : "", "aria-pressed": st.type === k ? "true" : "false", onclick: () => {
           st.type = k;
           draw();
         } }, l)));
         const tableSel = h("select", { onchange: (e) => st.tableId = e.target.value }, h("option", { value: "" }, "Choose your table…"), data.tables.map((tb) => h("option", { value: tb.id }, tb.name)));
         tableSel.value = data.tables.some((x) => x.id === st.tableId) ? st.tableId : "";
-        const name = h("input", { type: "text", maxlength: 40, autocomplete: "name", value: st.name, oninput: (e) => st.name = e.target.value });
+        const name = h("input", { type: "text", maxlength: 40, autocomplete: "name", placeholder: "e.g. Ali", value: st.name, oninput: (e) => st.name = e.target.value });
         const phone = h("input", { type: "tel", maxlength: 20, autocomplete: "tel", inputmode: "tel", placeholder: "03xx xxxxxxx", value: st.phone, oninput: (e) => st.phone = e.target.value });
         const notes = h("textarea", { maxlength: 200, rows: 2, placeholder: "e.g. less spicy, no onions", oninput: (e) => st.notes = e.target.value }, st.notes);
         const hp = h("input", { class: "qm-hp", tabindex: "-1", autocomplete: "off", "aria-hidden": "true", name: "website" });
         const send = h("button", { class: "qm-send", type: "button" }, "Place order \xB7 " + M2(t.total));
         send.onclick = async () => {
-          errSlot.replaceChildren();
-          const err = (m) => errSlot.replaceChildren(h("div", { class: "qm-err", role: "alert" }, m));
+          put(errSlot, );
+          const err = (m) => {
+            put(errSlot, h("div", { class: "qm-err", role: "alert" }, m));
+            errSlot.scrollIntoView({ block: "center", behavior: "smooth" });
+          };
           if (st.type === "DINE_IN" && !st.tableId) return err("Please choose your table.");
           if (st.name.trim().length < 2) return err("Please write your name.");
           if (st.phone.replace(/\D/g, "").length < 7) return err("Please write a valid phone number.");
           const uid = "qm-" + newId("o").slice(2);
           send.disabled = true;
-          send.textContent = "Sending…";
+          put(send, h("span", { class: "qm-spin small" }), "Sending your order…");
           try {
             const r = await pub("publicOrder", { uid, type: st.type, tableId: st.type === "DINE_IN" ? st.tableId : "", name: st.name.trim(), phone: st.phone.trim(), notes: st.notes.trim(), website: hp.value, items: ls.map((l) => ({ menuId: l.m.id, qty: l.qty })) });
             const tb = data.tables.find((x) => x.id === st.tableId);
-            mem.last = { uid, at: Date.now(), total: t.total, count: count(), type: st.type, table: st.type === "DINE_IN" && tb ? tb.name : "", status: r.status };
+            mem.last = { uid, ref: "R-" + ("qr-" + uid).slice(-6).toUpperCase(), at: Date.now(), total: t.total, count: count(), type: st.type, table: st.type === "DINE_IN" && tb ? tb.name : "", status: r.status || "PENDING", items: ls.map((l) => ({ name: l.m.name, qty: l.qty })) };
             mem.name = st.name.trim();
             mem.phone = st.phone.trim();
             mem.type = st.type;
@@ -5927,7 +6347,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             mem.cart = cart;
             st.notes = "";
             saveMem();
-            modal.close();
+            s2.close();
             showStatus();
           } catch (e) {
             err(errText(e));
@@ -5935,21 +6355,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             send.textContent = "Place order \xB7 " + M2(t.total);
           }
         };
-        box.replaceChildren(
-          h("div", { class: "qm-lines" }, ls.map((l) => h("div", { class: "qm-line" }, h("div", null, h("b", null, l.m.name), h("span", null, M2(l.m.price))), h("div", { class: "qm-step" }, h("button", { type: "button", onclick: () => {
-            setQty(l.m.id, l.qty - 1);
-            draw();
-          } }, "−"), h("span", null, l.qty), h("button", { type: "button", onclick: () => {
-            setQty(l.m.id, l.qty + 1);
-            draw();
-          } }, "+")), h("strong", null, M2(l.qty * l.m.price))))),
+        put(box, 
+          h("div", { class: "qm-lines" }, ls.map((l) => h(
+            "div",
+            { class: "qm-line" },
+            thumb(l.m, "qm-lthumb"),
+            h("div", { class: "qm-lname" }, h("b", null, l.m.name), h("span", null, M2(l.m.price))),
+            h("div", { class: "qm-step" }, h("button", { type: "button", "aria-label": "One less", onclick: () => {
+              setQty(l.m.id, l.qty - 1);
+              draw();
+            } }, "−"), h("span", null, l.qty), h("button", { type: "button", "aria-label": "One more", onclick: () => {
+              setQty(l.m.id, l.qty + 1);
+              draw();
+            } }, "+"))
+          ))),
           h(
             "div",
             { class: "qm-tot" },
+            h("div", null, h("span", null, "Subtotal"), h("span", null, M2(t.subtotal))),
             t.service ? h("div", null, h("span", null, "Service charge"), h("span", null, M2(t.service))) : null,
-            t.tax ? h("div", null, h("span", null, data.settings.TAX_LABEL || "Tax"), h("span", null, M2(t.tax))) : null,
+            t.tax ? h("div", null, h("span", null, clean(data.settings.TAX_LABEL) || "Tax"), h("span", null, M2(t.tax))) : null,
+            t.roundOff ? h("div", null, h("span", null, "Rounding"), h("span", null, M2(t.roundOff))) : null,
             h("div", { class: "grand" }, h("span", null, "Total"), h("span", null, M2(t.total)))
           ),
+          h("div", { class: "qm-form-h" }, "Your details"),
           typeSeg,
           st.type === "DINE_IN" ? field2("Table", tableSel) : null,
           h("div", { class: "qm-two" }, field2("Your name", name), field2("Phone", phone)),
@@ -5957,7 +6386,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           hp,
           errSlot,
           send,
-          h("p", { class: "qm-fine" }, "The restaurant will confirm your order. Payment at the counter.")
+          h("p", { class: "qm-fine" }, ic("check"), "The restaurant confirms your order. You pay at the counter.")
         );
       }
       draw();
@@ -5966,27 +6395,38 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       clearTimeout(statusTimer);
       const o = mem.last;
       if (!o) return drawMenu();
-      const icon2 = { PENDING: "⏳", ACCEPTED: "✓", REJECTED: "✕" }[o.status] || "⏳";
-      const title = { PENDING: "Order sent", ACCEPTED: "Order confirmed", REJECTED: "Order not accepted" }[o.status] || "Order sent";
-      const text = o.status === "ACCEPTED" ? "The kitchen has your order" + (o.table ? " for " + o.table : "") + ". Enjoy your meal!" : o.status === "REJECTED" ? "Sorry, the restaurant could not accept this order" + (o.reason ? ": " + o.reason : ".") + " Please ask a waiter." : "Waiting for the restaurant to confirm… This usually takes a minute.";
-      page.replaceChildren(h(
+      const s2 = String(o.status || "PENDING");
+      const ok = s2 === "ACCEPTED", bad = s2 === "REJECTED";
+      const title = ok ? "Order confirmed" : bad ? "Order not accepted" : "Order sent";
+      const text = ok ? "The kitchen is preparing your order" + (o.table ? " for " + o.table : "") + ". Enjoy your meal!" : bad ? "Sorry, the restaurant could not accept this order" + (clean(o.reason) ? ": " + clean(o.reason) : ".") + " Please ask a waiter." : "Waiting for the restaurant to confirm. This usually takes a minute — you can keep this page open.";
+      const step = (label, state) => h("li", { class: state }, h("span", { class: "dot" }, state === "done" ? ic("check") : state === "bad" ? ic("x") : null), label);
+      const hd = data ? data.hotel : { name: "", phone: "" };
+      put(page, h(
         "div",
-        { class: "qm-status s-" + String(o.status || "PENDING").toLowerCase() },
-        h("div", { class: "qm-ring" }, h("span", null, icon2)),
+        { class: "qm-status s-" + s2.toLowerCase() },
+        h("div", { class: "qm-ring" }, ok ? ic("check") : bad ? ic("x") : ic("clock")),
         h("h1", null, title),
         h("p", null, text),
-        h("div", { class: "qm-receipt" }, h("div", null, h("span", null, "Items"), h("b", null, o.count)), h("div", null, h("span", null, o.type === "TAKEAWAY" ? "Takeaway" : "Table"), h("b", null, o.type === "TAKEAWAY" ? "✓" : o.table || "-")), h("div", null, h("span", null, "Total"), h("b", null, M2(o.total)))),
+        h("ol", { class: "qm-steps" }, step("Order sent", "done"), step(bad ? "Not accepted" : "Confirmed by restaurant", ok ? "done" : bad ? "bad" : "now"), step("Being prepared", ok ? "now" : "")),
+        h(
+          "div",
+          { class: "qm-receipt" },
+          h("div", { class: "qm-receipt-h" }, h("span", null, "Your order"), h("b", null, clean(o.ref))),
+          (o.items || []).map((i) => h("div", { class: "qm-receipt-l" }, h("span", null, i.qty + " \xD7 " + clean(i.name)))),
+          h("div", { class: "qm-receipt-f" }, h("span", null, o.type === "TAKEAWAY" ? "Takeaway" : clean(o.table) || "Dine-in"), h("b", null, M2(o.total)))
+        ),
         h("button", { class: "qm-send", type: "button", onclick: () => {
           clearTimeout(statusTimer);
-          if (o.status !== "PENDING") delete mem.last;
+          if (!s2.startsWith("PENDING")) delete mem.last;
           saveMem();
           drawMenu();
           window.scrollTo(0, 0);
-        } }, o.status === "PENDING" ? "Back to menu" : "Order something else"),
-        h("footer", { class: "qm-foot" }, devCredit("dev-credit qm-credit"))
+        } }, s2 === "PENDING" ? "Back to the menu" : "Order something else"),
+        hd.phone ? h("a", { class: "qm-link", href: "tel:" + hd.phone.replace(/[^0-9+]/g, "") }, ic("phone"), "Call " + (hd.name || "the restaurant")) : null,
+        h("footer", { class: "qm-foot" }, h("div", { class: "qm-powered" }, "Powered by ", h("b", null, "Hotel POS")), devCredit("dev-credit qm-credit"))
       ));
       window.scrollTo(0, 0);
-      if (o.status === "PENDING" && Date.now() - o.at < 2 * 3600 * 1e3) {
+      if (s2 === "PENDING" && Date.now() - o.at < 2 * 3600 * 1e3) {
         statusTimer = setTimeout(async () => {
           if (!page.isConnected || !page.querySelector(".qm-status")) return;
           try {
@@ -6000,11 +6440,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }, 5e3);
       }
     }
+    function skeleton() {
+      const bone = (cls) => h("div", { class: "qm-bone " + (cls || "") });
+      put(page, 
+        h("header", { class: "qm-hero" }, h("div", { class: "qm-hero-in" }, bone("w40 light"), bone("w70 tall light"), bone("w55 light"))),
+        h("div", { class: "qm-main skel" }, [1, 2, 3, 4].map(() => h("div", { class: "qm-item" }, h("div", { class: "qm-item-body" }, bone("w70"), bone("w90"), bone("w30")), bone("sq"))))
+      );
+    }
     async function boot() {
-      page.replaceChildren(h("div", { class: "qm-loading" }, h("div", { class: "qm-spin" }), h("p", null, "Opening the menu…")));
+      skeleton();
       try {
-        data = await pub("publicMenu", {});
-        document.title = (data.hotel.name || link.name) + " \xB7 Menu";
+        data = tidy(await pub("publicMenu", {}));
+        document.title = data.hotel.name + " \xB7 Menu";
         Object.keys(cart).forEach((id) => {
           const m = data.menu.find((x) => x.id === id);
           if (!m || !m.available) delete cart[id];
@@ -6013,7 +6460,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         else drawMenu();
       } catch (e) {
         const msg = e && e.code === "MENU_OFF" ? "This restaurant has not switched on its QR menu yet." : errText(e);
-        page.replaceChildren(h("div", { class: "qm-status s-rejected" }, h("div", { class: "qm-ring" }, h("span", null, "!")), h("h1", null, "Menu not available"), h("p", null, msg), h("button", { class: "qm-send", type: "button", onclick: boot }, "Try again")));
+        put(page, h("div", { class: "qm-status s-rejected" }, h("div", { class: "qm-ring" }, ic("x")), h("h1", null, "Menu not available"), h("p", null, msg), h("button", { class: "qm-send", type: "button", onclick: boot }, "Try again")));
       }
     }
     boot();
