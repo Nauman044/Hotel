@@ -824,6 +824,8 @@ code { font: 13px ui-monospace, Menlo, Consolas, monospace; background: var(--su
 .qr-card .trow { display: flex; justify-content: space-between; gap: 10px; }
 .qr-card .trow.grand { font-weight: 800; border-top: 1px solid var(--line); padding-top: 8px; }
 .qr-card footer { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
+.qr-card footer.three { grid-template-columns: 1fr 1fr; }
+.qr-card footer.three > :last-child { grid-column: 1 / -1; }
 .qr-setup { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start; }
 .qr-preview { width: 220px; padding: 10px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
 .qr-preview svg { width: 100%; height: auto; display: block; }
